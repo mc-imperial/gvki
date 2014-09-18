@@ -5,6 +5,7 @@
 #include "gvki/Logger.h"
 #include "gvki/Debug.h"
 #include <cassert>
+#include <cstring>
 
 #ifdef MACRO_LIB
 #define API_SUFFIX _hook
@@ -307,13 +308,32 @@ DEFN(clSetKernelArg)
         assert (l.kernels.count(kernel) == 1 && "Kernel was not logged");
         KernelInfo& ki = l.kernels[kernel];
 
-        ArgInfo ai;
-        ai.argValue = arg_value;
-        ai.argSize = arg_size;
-
         // Resize arguments vector if necessary
         if (ki.arguments.size() <= arg_index)
             ki.arguments.resize(arg_index +1);
+
+        ArgInfo& ai = ki.arguments[arg_index];
+
+        if (ai.argValue != NULL)
+        {
+            // We must have malloc()'ed from a previous call to this
+            // function so free the pointer
+            free((void*) ai.argValue);
+        }
+
+        // The user is allowed to do whatever
+        // they want with the memory pointed
+        // to by ``arg_value`` so we need to
+        // copy its contents.
+        //
+        // FIXME: We aren't always free'ing the memory
+        // allocated here because we aren't tracking
+        // cl_kernel or cl_context destruction
+        ai.argValue = malloc(arg_size);
+        memcpy((void*) ai.argValue, arg_value, arg_size);
+
+        ai.argSize = arg_size;
+
 
         ki.arguments[arg_index] = ai;
     }
