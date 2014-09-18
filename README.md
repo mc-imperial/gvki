@@ -76,4 +76,4 @@ Special environment variables
 
 Setting various environment variables changes its behaviour
 
-* ``GV_DEBUG`` setting this causes debug information to be sent to stderr during interception.
+* ``GVKI_DEBUG`` setting this causes debug information to be sent to stderr during interception.
