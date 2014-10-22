@@ -20,8 +20,12 @@ import subprocess
 import shutil
 import sys
 
-def printError(string):
-    logging.info('\033[0;32m*** {} ***\033[0m'.format(string))
+def printError(msg):
+    logging.error('\033[0;31m*** {} ***\033[0m'.format(msg))
+
+def printOk(msg):
+    logging.info('\033[0;32m*** {} ***\033[0m'.format(msg))
+
 
 class LibTest(object):
     def __init__(self, path):
@@ -38,12 +42,12 @@ class LibTest(object):
 
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
         if retcode != 0:
-            logging.error('\033[0;31m*** {} failed ***\033[0m'.format(self.path))
+            printError('{} failed'.forat(self.path))
         else:
-            logging.info('\033[0;32m*** {} passed ***\033[0m'.format(self.path))
+            printOk('{} passed'.format(self.path))
 
             if not os.path.exists(expectedOutputDir):
-                PrintError('OutputDir missing')
+                printError('OutputDir missing')
                 return 1
             else:
                 expectedJSONFile = os.path.join(expectedOutputDir, 'log.json')
@@ -57,7 +61,7 @@ class LibTest(object):
                 recordedKernels=glob.glob(expectedOutputDir + os.path.sep + '*.cl')
                 logging.info('Recorded kernels: {}'.format(recordedKernels))
                 if len(recordedKernels) == 0:
-                    PrintError('No kernels recorded')
+                    printError('No kernels recorded')
                     return 1
 
 
@@ -146,7 +150,11 @@ def main(args):
         logging.info('Running test: {}'.format(test.path))
         count += test.run()
 
-    logging.info('Failures {}'.format(count))
+    msg = '# of Failures {}'.format(count)
+    if count == 0:
+        printOk(msg)
+    else:
+        printError(msg)
 
     return count != 0
 
