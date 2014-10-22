@@ -1,5 +1,5 @@
 project(gvki)
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.7)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/findopencl")
 

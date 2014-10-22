@@ -25,7 +25,9 @@ macro(GVKI_TEST test)
 
     # Macro library
     add_executable(${testWithoutExt}_gvki_macro EXCLUDE_FROM_ALL ${testWithoutExt})
-    target_compile_definitions(${testWithoutExt}_gvki_macro PRIVATE MACRO_LIB)
+
+    # Can't use target_compile_definitions() here because we need support CMake 2.8.7
+    set_target_properties(${testWithoutExt}_gvki_macro PROPERTIES COMPILE_DEFINITIONS MACRO_LIB)
     target_link_libraries(${testWithoutExt}_gvki_macro GVKI_macro ${OPENCL_LIBRARIES})
     add_dependencies(check ${testWithoutExt}_gvki_macro)
 
