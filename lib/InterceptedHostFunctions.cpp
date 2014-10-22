@@ -50,7 +50,9 @@ DEFN(clCreateBuffer)
         l.buffers[buffer] = bi;
     }
 
-    *errcode_ret = success;
+    if (errcode_ret)
+        *errcode_ret = success;
+
     return buffer;
 }
 
@@ -97,7 +99,9 @@ DEFN(clCreateImage2D)
         exit(1);
     }
 
-    *errcode_ret = success;
+    if (errcode_ret)
+        *errcode_ret = success;
+
     return img;
 }
 
@@ -133,7 +137,9 @@ DEFN(clCreateImage3D)
         exit(1);
     }
 
-    *errcode_ret = success;
+    if (errcode_ret)
+        *errcode_ret = success;
+
     return img;
 }
 
@@ -200,7 +206,9 @@ DEFN(clCreateProgramWithSource)
         }
     }
 
-    *errcode_ret = success;
+    if (errcode_ret)
+        *errcode_ret = success;
+
     return program;
 }
 
@@ -271,7 +279,9 @@ DEFN(clCreateKernel)
         ki.entryPointName = std::string(kernel_name);
     }
 
-    *errcode_ret = success;
+    if (errcode_ret)
+        *errcode_ret = success;
+
     return kernel;
 }
 

@@ -20,6 +20,9 @@ class LibTest(object):
         env.update(extra_env)
         logging.debug('env: {}'.format(env))
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
+        if retcode != 0:
+            logging.error('*** {} failed ***'.format(self.path))
+
         logging.info('')
         logging.info('')
 
