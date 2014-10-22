@@ -1,7 +1,7 @@
 set(SOURCES InterceptedHostFunctions.cpp UnderlyingCaller.cpp Logger.cpp)
 
 # The LD_PRELOAD library
-if (NOT MSYS)
+if (NOT WIN32)
     add_library(GVKI_preload SHARED ${SOURCES})
 endif()
 

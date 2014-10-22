@@ -1,0 +1,2 @@
+GVKI_TEST(HelloWorld.cpp)
+file(COPY HelloWorld.cl DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
