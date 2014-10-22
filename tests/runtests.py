@@ -7,7 +7,9 @@ import configparser as cp
 import copy
 import logging
 import os
+import re
 import subprocess
+import shutil
 import sys
 
 class LibTest(object):
@@ -55,7 +57,6 @@ class PreloadLibTest(LibTest):
         else:
             return self._run({ 'LD_PRELOAD': self.libPath})
 
-
 def main(args):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', help='Directory to scan for test OpenCL programs')
@@ -95,6 +96,13 @@ def main(args):
                 tests.append( PreloadLibTest( os.path.join(dirpath, f), preloadlibPath))
             elif f.endswith('_gvki_macro'):
                 tests.append( MacroLibTest( os.path.join(dirpath, f)))
+
+        # clean up any old output directories
+        for directory in dirnames:
+            if re.match(r'gvki-\d+', directory):
+                toRemove = os.path.join(dirpath, directory)
+                logging.info('Deleting {}'.format(toRemove))
+                shutil.rmtree(toRemove)
 
     logging.info('Found {} tests'.format(len(tests)))
     tests.sort()
