@@ -12,12 +12,16 @@ except ImportError:
     import ConfigParser as cp
 
 import copy
+import glob
 import logging
 import os
 import re
 import subprocess
 import shutil
 import sys
+
+def printError(string):
+    logging.info('\033[0;32m*** {} ***\033[0m'.format(string))
 
 class LibTest(object):
     def __init__(self, path):
@@ -28,11 +32,34 @@ class LibTest(object):
         env = copy.deepcopy(os.environ)
         env.update(extra_env)
         logging.debug('env: {}'.format(env))
+
+        expectedOutputDir = os.path.join(os.path.dirname(self.path), "gvki-0")
+        assert not os.path.exists(expectedOutputDir)
+
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
         if retcode != 0:
             logging.error('\033[0;31m*** {} failed ***\033[0m'.format(self.path))
         else:
             logging.info('\033[0;32m*** {} passed ***\033[0m'.format(self.path))
+
+            if not os.path.exists(expectedOutputDir):
+                PrintError('OutputDir missing')
+                return 1
+            else:
+                expectedJSONFile = os.path.join(expectedOutputDir, 'log.json')
+
+                if not os.path.exists(expectedJSONFile):
+                    return 1
+
+                # FIXME: Check the contents of the JSON file and kernel(s) look right
+
+                # There should be at least one kernel
+                recordedKernels=glob.glob(expectedOutputDir + os.path.sep + '*.cl')
+                logging.info('Recorded kernels: {}'.format(recordedKernels))
+                if len(recordedKernels) == 0:
+                    PrintError('No kernels recorded')
+                    return 1
+
 
         logging.info('')
         logging.info('')
