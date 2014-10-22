@@ -9,25 +9,27 @@
 using namespace gvki;
 
 #ifdef MACRO_LIB
-#define SET_FCN_PTR(F) F ## U = &(::F);
+#define SET_FCN_PTR(functionName) functionName ## U = &(::functionName);
 #else
 #include <unistd.h>
-#define SET_FCN_PTR(F) dlerror(); /* clear any old errors */ \
-                       F ## U = reinterpret_cast<F ## Ty>(::dlsym(RTLD_NEXT, #F)); \
-                       errorMsg = dlerror(); \
-                       if ( errorMsg != NULL) { \
-                         std::cerr << "Failed to dlsym(\"" #F  "\"): " << errorMsg << std::endl; \
-                         _exit(255); \
-                       } \
-                       if ( F ## U == NULL) { \
-                         std::cerr << "Function pointer for \"" #F "\" cannot be NULL" << std::endl; \
-                         _exit(255); \
-                       }
+#define SET_FCN_PTR(functionName) dlerror(); /* clear any old errors */ \
+                                  this->functionName ## U = reinterpret_cast<functionName ## Ty>(::dlsym(RTLD_NEXT, #functionName)); \
+                                  errorMsg = dlerror(); \
+                                  if ( errorMsg != NULL) { \
+                                      std::cerr << "Failed to dlsym(\"" #functionName  "\"): " << errorMsg << std::endl; \
+                                      _exit(255); \
+                                  } \
+                                  if ( this->functionName ## U == NULL) { \
+                                      std::cerr << "Function pointer for \"" #functionName "\" cannot be NULL" << std::endl; \
+                                      _exit(255); \
+                                  }
 #endif
 
 UnderlyingCaller::UnderlyingCaller()
 {
     const char* errorMsg = 0;
+
+    // Initialise the function pointers
     SET_FCN_PTR(clCreateBuffer)
     SET_FCN_PTR(clCreateSubBuffer)
 #pragma GCC diagnostic push
