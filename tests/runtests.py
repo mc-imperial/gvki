@@ -3,7 +3,14 @@
 Simple script to run test OpenCL programs
 """
 import argparse
-import configparser as cp
+
+try:
+    # Python 3
+    import configparser as cp
+except ImportError:
+    # Python 2.x
+    import ConfigParser as cp
+
 import copy
 import logging
 import os
