@@ -44,8 +44,6 @@ class LibTest(object):
         if retcode != 0:
             printError('{} failed'.forat(self.path))
         else:
-            printOk('{} passed'.format(self.path))
-
             if not os.path.exists(expectedOutputDir):
                 printError('OutputDir missing')
                 return 1
