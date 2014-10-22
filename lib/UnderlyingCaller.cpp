@@ -43,3 +43,9 @@ UnderlyingCaller::UnderlyingCaller()
     SET_FCN_PTR(clSetKernelArg)
     SET_FCN_PTR(clEnqueueNDRangeKernel)
 };
+
+UnderlyingCaller& UnderlyingCaller::Singleton()
+{
+    static UnderlyingCaller uc;
+    return uc;
+}

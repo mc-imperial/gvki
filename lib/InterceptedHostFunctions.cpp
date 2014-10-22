@@ -21,8 +21,6 @@
 using namespace std;
 using namespace gvki;
 
-static UnderlyingCaller uc;
-
 extern "C" {
 
 cl_mem
@@ -36,7 +34,7 @@ DEFN(clCreateBuffer)
 {
     DEBUG_MSG("Intercepted clCreateBuffer()");
     cl_int success = CL_SUCCESS;
-    cl_mem buffer = uc.clCreateBufferU(context, flags, size, host_ptr, &success);
+    cl_mem buffer = UnderlyingCaller::Singleton().clCreateBufferU(context, flags, size, host_ptr, &success);
 
     if (success == CL_SUCCESS)
     {
@@ -83,14 +81,14 @@ DEFN(clCreateImage2D)
     DEBUG_MSG("Intercepted clCreate2DImage()");
 
     cl_int success = CL_SUCCESS;
-    cl_mem img = uc.clCreateImage2DU(context,
-                                     flags,
-                                     image_format,
-                                     image_width,
-                                     image_height,
-                                     image_row_pitch,
-                                     host_ptr,
-                                     &success);
+    cl_mem img = UnderlyingCaller::Singleton().clCreateImage2DU(context,
+                                                                flags,
+                                                                image_format,
+                                                                image_width,
+                                                                image_height,
+                                                                image_row_pitch,
+                                                                host_ptr,
+                                                                &success);
 
     if (success == CL_SUCCESS)
     {
@@ -119,16 +117,16 @@ DEFN(clCreateImage3D)
      cl_int *                errcode_ret)
 {
     cl_int success = CL_SUCCESS;
-    cl_mem img = uc.clCreateImage3DU(context,
-                                     flags,
-                                     image_format,
-                                     image_width,
-                                     image_height,
-                                     image_depth,
-                                     image_row_pitch,
-                                     image_slice_pitch,
-                                     host_ptr,
-                                     &success);
+    cl_mem img = UnderlyingCaller::Singleton().clCreateImage3DU(context,
+                                                                flags,
+                                                                image_format,
+                                                                image_width,
+                                                                image_height,
+                                                                image_depth,
+                                                                image_row_pitch,
+                                                                image_slice_pitch,
+                                                                host_ptr,
+                                                                &success);
 
     if (success == CL_SUCCESS)
     {
@@ -168,7 +166,7 @@ DEFN(clCreateProgramWithSource)
 {
     DEBUG_MSG("Intercepted clCreateProgramWithSource()");
     cl_int success = CL_SUCCESS;
-    cl_program program = uc.clCreateProgramWithSourceU(context, count, strings, lengths, &success);
+    cl_program program = UnderlyingCaller::Singleton().clCreateProgramWithSourceU(context, count, strings, lengths, &success);
 
     if (success == CL_SUCCESS)
     {
@@ -223,12 +221,12 @@ DEFN(clBuildProgram)
     )
 {
     DEBUG_MSG("Intercepted clCreateBuildProgram()");
-    cl_int success = uc.clBuildProgramU(program,
-                                        num_devices,
-                                        device_list,
-                                        options,
-                                        pfn_notify,
-                                        user_data);
+    cl_int success = UnderlyingCaller::Singleton().clBuildProgramU(program,
+                                                                   num_devices,
+                                                                   device_list,
+                                                                   options,
+                                                                   pfn_notify,
+                                                                   user_data);
 
     if (success == CL_SUCCESS)
     {
@@ -264,7 +262,7 @@ DEFN(clCreateKernel)
     DEBUG_MSG("Intercepted clCreateKernel()");
 
     cl_int success = CL_SUCCESS;
-    cl_kernel kernel = uc.clCreateKernelU(program, kernel_name, errcode_ret);
+    cl_kernel kernel = UnderlyingCaller::Singleton().clCreateKernelU(program, kernel_name, errcode_ret);
     if ( success == CL_SUCCESS)
     {
         Logger& l = Logger::Singleton();
@@ -305,11 +303,10 @@ DEFN(clSetKernelArg)
      const void * arg_value)
 {
     DEBUG_MSG("Intercepted clSetKernelArg()");
-    cl_int success = uc.clSetKernelArgU(kernel,
-                                        arg_index,
-                                        arg_size,
-                                        arg_value
-                                       );
+    cl_int success = UnderlyingCaller::Singleton().clSetKernelArgU(kernel,
+                                                                   arg_index,
+                                                                   arg_size,
+                                                                   arg_value);
 
     if (success == CL_SUCCESS)
     {
@@ -367,16 +364,15 @@ DEFN(clEnqueueNDRangeKernel)
 {
     DEBUG_MSG("Intercepted clEnqueueNDRangeKernel()");
 
-    cl_int success = uc.clEnqueueNDRangeKernelU(command_queue,
-                                                kernel,
-                                                work_dim,
-                                                global_work_offset,
-                                                global_work_size,
-                                                local_work_size,
-                                                num_events_in_wait_list,
-                                                event_wait_list,
-                                                event
-                                               );
+    cl_int success = UnderlyingCaller::Singleton().clEnqueueNDRangeKernelU(command_queue,
+                                                                           kernel,
+                                                                           work_dim,
+                                                                           global_work_offset,
+                                                                           global_work_size,
+                                                                           local_work_size,
+                                                                           num_events_in_wait_list,
+                                                                           event_wait_list,
+                                                                           event);
 
     if (success == CL_SUCCESS)
     {

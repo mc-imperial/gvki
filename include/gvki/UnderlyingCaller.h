@@ -97,6 +97,8 @@ class UnderlyingCaller
         clEnqueueNDRangeKernelTy clEnqueueNDRangeKernelU;
 
         UnderlyingCaller();
+
+        static UnderlyingCaller& Singleton();
 };
 
 }
