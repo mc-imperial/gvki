@@ -18,6 +18,20 @@ if (UNIX OR APPLE)
     find_path(OPENCL_INCLUDE_DIRS
               NAMES CL/cl.h OpenCL/cl.h CL/cl.hpp OpenCL/cl.hpp
              )
+
+    if ( CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
+        # For ARM's Mali libOpenCL.so does not have the
+        # OpenCL symbols. These are actually in libmali
+        find_library(MALI_LIBRARY mali)
+        if( MALI_LIBRARY )
+            # Found Mali library so append to OpenCL library list
+            list(APPEND OPENCL_LIBRARIES ${MALI_LIBRARY})
+            message(STATUS "Found ARM Mali library ${MALI_LIBRARY}")
+        else()
+            message(WARNING "ARM target detected but Mali library was not found.")
+        endif()
+    endif()
+
 elseif (WIN32)
     message(FATAL_ERROR "Windows support not implemented")
 else ()
