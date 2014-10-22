@@ -10,6 +10,17 @@ macro(GVKI_TEST test)
         target_link_libraries(${testWithoutExt}_gvki_preload ${OPENCL_LIBRARIES})
         add_dependencies(${testWithoutExt}_gvki_preload GVKI_preload)
         add_dependencies(check ${testWithoutExt}_gvki_preload)
+
+        # Ensure each test goes in its own directory to simplify testing
+        set(OutputDir "${CMAKE_CURRENT_BINARY_DIR}/${testWithoutExt}_gvki_preload.d")
+        set_target_properties(${testWithoutExt}_gvki_preload
+                              PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                                         ${OutputDir}
+                             )
+        # Copy over kernels
+        foreach (kernel ${ARGN})
+            file(COPY ${kernel} DESTINATION ${OutputDir})
+        endforeach()
     endif()
 
     # Macro library
@@ -17,6 +28,18 @@ macro(GVKI_TEST test)
     target_compile_definitions(${testWithoutExt}_gvki_macro PRIVATE MACRO_LIB)
     target_link_libraries(${testWithoutExt}_gvki_macro GVKI_macro ${OPENCL_LIBRARIES})
     add_dependencies(check ${testWithoutExt}_gvki_macro)
+
+    # Ensure each test goes in its own directory to simplify testing
+    set(OutputDir "${CMAKE_CURRENT_BINARY_DIR}/${testWithoutExt}_gvki_macro.d")
+    set_target_properties(${testWithoutExt}_gvki_macro
+                          PROPERTIES RUNTIME_OUTPUT_DIRECTORY
+                          ${OutputDir}
+                         )
+    # Copy over kernels
+    foreach (kernel ${ARGN})
+        file(COPY ${kernel} DESTINATION ${OutputDir})
+    endforeach()
+
 endmacro()
 
 find_package(PythonInterp REQUIRED)
