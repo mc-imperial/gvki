@@ -7,7 +7,10 @@
 
 include(FindPackageHandleStandardArgs)
 
-if (UNIX OR APPLE)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    ###########################################################################
+    # Linux
+    ###########################################################################
     find_library(OPENCL_LIBRARIES
                  NAMES OpenCL
                  DOC "Path to OpenCL library"
@@ -16,7 +19,7 @@ if (UNIX OR APPLE)
                 )
 
     find_path(OPENCL_INCLUDE_DIRS
-              NAMES CL/cl.h OpenCL/cl.h CL/cl.hpp OpenCL/cl.hpp
+              NAMES CL/cl.h CL/cl.hpp
              )
 
     if ( CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
@@ -31,8 +34,23 @@ if (UNIX OR APPLE)
             message(WARNING "ARM target detected but Mali library was not found.")
         endif()
     endif()
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    ###########################################################################
+    # OSX (Darwin)
+    ###########################################################################
+    find_library(OPENCL_LIBRARIES
+                 NAMES OpenCL
+                 DOC "Path to OpenCL library"
+                )
+
+    find_path(OPENCL_INCLUDE_DIRS
+              NAMES OpenCL/cl.h OpenCL/cl.hpp
+             )
 
 elseif (WIN32)
+    ###########################################################################
+    # Windows
+    ###########################################################################
     message(FATAL_ERROR "Windows support not implemented")
 else ()
     message(FATAL_ERROR "Unsupported platform")
