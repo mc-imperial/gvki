@@ -42,15 +42,18 @@ class LibTest(object):
 
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
         if retcode != 0:
-            printError('{} failed'.forat(self.path))
+            printError('{} failed during execution'.format(self.path))
+            return 1
         else:
+
             if not os.path.exists(expectedOutputDir):
-                printError('OutputDir missing')
+                printError('{} failed. OutputDir missing'.format(self.path))
                 return 1
             else:
                 expectedJSONFile = os.path.join(expectedOutputDir, 'log.json')
 
                 if not os.path.exists(expectedJSONFile):
+                    printError('{} failed. JSON file is missing'.format(self.path))
                     return 1
 
                 # FIXME: Check the contents of the JSON file and kernel(s) look right
@@ -59,16 +62,12 @@ class LibTest(object):
                 recordedKernels=glob.glob(expectedOutputDir + os.path.sep + '*.cl')
                 logging.info('Recorded kernels: {}'.format(recordedKernels))
                 if len(recordedKernels) == 0:
-                    printError('No kernels recorded')
+                    printError('{} failed. No kernels recorded'.format(self.path))
                     return 1
 
 
-        logging.info('')
-        logging.info('')
-
-        # FIXME: Check stuff was recorded
-
-        return  0 if retcode == 0 else 1
+        printOk('{} passed'.format(self.path))
+        return 0
 
 
     # So we can sort tests
