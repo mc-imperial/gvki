@@ -24,8 +24,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_subdirectory(lib)
 
-option(ENABLE_TESTS OFF)
-if (ENABLE_TESTS)
+option(ENABLE_TESTING OFF)
+if (ENABLE_TESTING)
     # We definitely need the OpenCL library to run the tests
     if (NOT OPENCL_LIBRARIES)
         message(FATAL_ERROR "An OpenCL library is required to build and run tests")

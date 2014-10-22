@@ -42,7 +42,7 @@ $ mkdir gvki
 $ git clone git://github.com/delcypher/gvki.git src
 $ mkdir build
 $ cd build
-$ cmake ../src/
+$ cmake -DENABLE_TESTING:BOOL=ON ../src/
 $ make
 ```
 
@@ -50,6 +50,15 @@ Windows
 -------
 
 TODO
+
+Testing
+=======
+
+Run the test target (``ENABLE_TESTING`` must be set to true when configuring with cmake)
+
+```
+$ make check
+```
 
 Output produced
 ===============
