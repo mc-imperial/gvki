@@ -57,10 +57,12 @@ class PreloadLibTest(LibTest):
 
 
 def main(args):
-    logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', help='Directory to scan for test OpenCL programs')
+    parser.add_argument('-l', '--loglevel', type=str, default="info",choices=['debug','info','warning','error','critical'])
     parsedArgs = parser.parse_args(args)
+
+    logging.basicConfig(level=getattr(logging, parsedArgs.loglevel.upper(), None))
 
     if not os.path.isdir(parsedArgs.directory):
         logging.error('"{}" is not a directory'.format(parsedArgs.directory))
