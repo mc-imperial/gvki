@@ -21,7 +21,9 @@ class LibTest(object):
         logging.debug('env: {}'.format(env))
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
         if retcode != 0:
-            logging.error('*** {} failed ***'.format(self.path))
+            logging.error('\033[0;31m*** {} failed ***\033[0m'.format(self.path))
+        else:
+            logging.info('\033[0;32m*** {} passed ***\033[0m'.format(self.path))
 
         logging.info('')
         logging.info('')
