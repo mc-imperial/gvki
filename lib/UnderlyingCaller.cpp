@@ -1,19 +1,18 @@
 #include "gvki/UnderlyingCaller.h"
+#include "gvki/Config.h"
 #include <iostream>
 #include <cstdlib>
-
-#ifndef MACRO_LIB
-#include <dlfcn.h>
-#endif
 
 using namespace gvki;
 
 #ifdef MACRO_LIB
 #define SET_FCN_PTR(functionName) functionName ## U = &(::functionName);
 #else
+
+#include <dlfcn.h>
 #include <unistd.h>
 #define SET_FCN_PTR(functionName) dlerror(); /* clear any old errors */ \
-                                  this->functionName ## U = reinterpret_cast<functionName ## Ty>(::dlsym(RTLD_NEXT, #functionName)); \
+                                  this->functionName ## U = reinterpret_cast<functionName ## Ty>(::dlsym(OCL_HANDLE, #functionName)); \
                                   errorMsg = dlerror(); \
                                   if ( errorMsg != NULL) { \
                                       std::cerr << "Failed to dlsym(\"" #functionName  "\"): " << errorMsg << std::endl; \
@@ -23,11 +22,39 @@ using namespace gvki;
                                       std::cerr << "Function pointer for \"" #functionName "\" cannot be NULL" << std::endl; \
                                       _exit(255); \
                                   }
+
 #endif
+
+#define _STRINGIFY(str) #str
+#define STRINGIFY(str) _STRINGIFY(str)
 
 UnderlyingCaller::UnderlyingCaller()
 {
     const char* errorMsg = 0;
+
+#ifndef MACRO_LIB
+
+#ifdef __APPLE__
+    // I can't seem to get dlsym(RTLD_NEXT, ...) to work so we'll do this instead
+    // on OSX
+    void* handle = dlopen( STRINGIFY(OPENCL_LIBRARY_ABS_PATH), RTLD_NOW);
+    if ( handle == NULL)
+    {
+        std::cerr << "Failed to call dlopen(" STRINGIFY(OPENCL_LIBRARY_ABS_PATH)  ", RTLD_NOW)" << std::endl;
+        errorMsg = dlerror();
+        if (errorMsg != NULL)
+        {
+            std::cerr << errorMsg << std::endl;
+        }
+        _exit(255);
+    }
+    #define OCL_HANDLE handle
+#else
+    // On Linux using RTLD_NEXT as the handle seems to work fine.
+    #define OCL_HANDLE RTLD_NEXT
+#endif
+
+#endif
 
     // Initialise the function pointers
     SET_FCN_PTR(clCreateBuffer)

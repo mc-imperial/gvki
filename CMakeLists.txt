@@ -15,13 +15,18 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/findopencl")
 find_package(OpenCL)
 if (OPENCL_FOUND)
     include_directories(${OPENCL_INCLUDE_DIRS})
-endif ()
+    list(GET OPENCL_LIBRARIES 0 OPENCL_LIBRARY_ABS_PATH)
+else()
+    set(OPENCL_LIBRARY_ABS_PATH "UNKNOWN")
+endif()
 
 ###############################################################################
 # Setup includes
 ###############################################################################
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_BINARY_DIR}/include)
 
+add_subdirectory(include)
 add_subdirectory(lib)
 
 option(ENABLE_TESTING OFF)
