@@ -25,9 +25,6 @@ using namespace gvki;
 
 #endif
 
-#define _STRINGIFY(str) #str
-#define STRINGIFY(str) _STRINGIFY(str)
-
 UnderlyingCaller::UnderlyingCaller()
 {
     const char* errorMsg = 0;
@@ -37,10 +34,10 @@ UnderlyingCaller::UnderlyingCaller()
 #ifdef __APPLE__
     // I can't seem to get dlsym(RTLD_NEXT, ...) to work so we'll do this instead
     // on OSX
-    void* handle = dlopen( STRINGIFY(OPENCL_LIBRARY_ABS_PATH), RTLD_NOW);
+    void* handle = dlopen( OPENCL_LIBRARY_ABS_PATH, RTLD_NOW);
     if ( handle == NULL)
     {
-        std::cerr << "Failed to call dlopen(" STRINGIFY(OPENCL_LIBRARY_ABS_PATH)  ", RTLD_NOW)" << std::endl;
+        std::cerr << "Failed to call dlopen(" OPENCL_LIBRARY_ABS_PATH  ", RTLD_NOW)" << std::endl;
         errorMsg = dlerror();
         if (errorMsg != NULL)
         {
