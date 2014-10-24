@@ -1,0 +1,21 @@
+# vim: set sw=2 ts=2 softtabstop=2 expandtab:
+language: cpp
+os:
+  - linux
+  - osx
+install:
+  - if [ `uname` = "Linux" ]; then
+      sudo apt-get -qq update;
+      sudo apt-get install -qq fglrx opencl-headers;
+    elif [ `uname` = "Darwin" ]; then
+      echo "Not installing anything";
+    else
+      echo "Unsupported platform";
+      exit 1;
+    fi
+script:
+  - mkdir build
+  - cd build/
+  - cmake -DENABLE_TESTING=ON ../
+  - make
+  - make check
