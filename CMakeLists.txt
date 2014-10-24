@@ -23,7 +23,7 @@ if (OPENCL_FOUND)
         if (IS_DIRECTORY ${OPENCL_LIBRARY_ABS_PATH})
             set(OPENCL_LIBRARY_ABS_PATH "${OPENCL_LIBRARY_ABS_PATH}/OpenCL")
         else()
-            message(FATAL_ERROR "Expected "${OPENCL_LIBRARY_ABS_PATH}" to be a directory on OSX")
+            message(FATAL_ERROR "Expected \"${OPENCL_LIBRARY_ABS_PATH}\" to be a directory on OSX")
         endif()
     endif()
 
