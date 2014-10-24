@@ -88,7 +88,7 @@ class PreloadLibTest(LibTest):
 
     def run(self):
         if sys.platform == 'darwin':
-            return self._run({ 'DYLD_INSERT_LIBRARIES': self.libPath})
+            return self._run({ 'DYLD_INSERT_LIBRARIES': self.libPath, 'DYLD_FORCE_FLAT_NAMESPACE':'1'})
         else:
             return self._run({ 'LD_PRELOAD': self.libPath})
 

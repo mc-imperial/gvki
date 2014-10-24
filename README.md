@@ -6,7 +6,7 @@ information needed by [GPUVerify](http://multicore.doc.ic.ac.uk/tools/GPUVerify/
 
 It provides two ways of intercepting calls to OpenCL host functions
 
-* A preloadable library. A shared library (``lib/libOpenCL.so``) is built which
+* A preloadable library. A shared library is built which
   can used with ``LD_PRELOAD`` (Linux) or ``DYLD_INSERT_LIBRARIES`` (OSX) to
   intercept calls of binary applications.
 
@@ -15,10 +15,10 @@ It provides two ways of intercepting calls to OpenCL host functions
 $ LD_PRELOAD=/path/to/gvki/lib/libGVKI_preload.so ./your_program
 
 # OSX
-$ DYLD_INSERT_LIBRARIES=/path/to/gvki/lib/libGVKI_preload.dylib ./your_program
+$ DYLD_FORCE_FLAT_NAMESPACE=1 DYLD_INSERT_LIBRARIES=/path/to/gvki/lib/libGVKI_preload.dylib ./your_program
 ```
 
-* "Macro library". For systems that do not support ``LD_PRELOAD`` we also
+* "Macro library". For systems that do not support pre loadable libraries we also
   provide a header file that can be included in your application to rewrite all
   relevant calls to functions in our interceptor library
   (``lib/libGVKI_macro.a``) which you then must link with afterwards.
