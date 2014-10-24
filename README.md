@@ -1,7 +1,7 @@
 GPUVerify OpenCL Kernel Interceptor
 ===================================
 
-[![Build Status](https://travis-ci.org/delcypher/gvki.svg?branch=master)](https://travis-ci.org/delcypher/gvki)
+[![Build Status](https://travis-ci.org/mc-imperial/gvki.svg?branch=master)](https://travis-ci.org/mc-imperial/gvki)
 
 This is a simple wrapper library to intercept OpenCL host code calls to collect
 information needed by [GPUVerify](http://multicore.doc.ic.ac.uk/tools/GPUVerify/) so it can verify executed kernels.
