@@ -59,7 +59,7 @@ class Logger
         void openLog();
         void closeLog();
 
-        Logger(std::string directory);
+        Logger();
         ~Logger();
         void dump(cl_kernel k);
 

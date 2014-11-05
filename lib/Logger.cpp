@@ -11,6 +11,11 @@
 
 // For mkdir(). FIXME: Make windows compatible
 #include <sys/stat.h>
+// For opendir(). FIXME: Make windows compatible
+#include <dirent.h>
+
+// For getcwd()
+#include <unistd.h>
 #define FILE_SEP "/"
 
 using namespace std;
@@ -22,32 +27,72 @@ static const int maxFiles = 10000;
 
 Logger& Logger::Singleton()
 {
-    // FIXME: Read directory from env
-    static Logger l("gvki");
+    static Logger l;
     return l;
 }
 
-Logger::Logger(std::string directory)
+Logger::Logger()
 {
     int count = 0;
     bool success= false;
 
-    // Keep trying a directory name with a number as suffix
+    // FIXME: Reading from the environment probably doesn't belong in here
+    // but it makes implementing the singleton a lot easier
+    std::string directoryPrefix;
+
+    const char* envTemp = getenv("GVKI_ROOT");
+    if (envTemp)
+    {
+        DEBUG_MSG("Using GVKI_ROOT value as destination for directories");
+        DIR* dh = opendir(envTemp);
+        if (dh == NULL)
+        {
+            perror("Could not access directory");
+            ERROR_MSG("Directory was :" << envTemp);
+            exit(1);
+        }
+        else
+            closedir(dh);
+
+        directoryPrefix = envTemp;
+
+    }
+    else
+    {
+        // Use the current working directory
+        DEBUG_MSG("Using current working directory as destination for directories");
+
+        // FIXME: Hard-coding this size is gross
+        char cwdArray[1024];
+        char* cwdResult = getcwd(cwdArray, sizeof(cwdArray)/sizeof(char));
+        if (!cwdResult)
+        {
+            perror("Could not read the current working directory");
+            exit(1);
+        }
+        else
+            directoryPrefix = cwdResult;
+
+    }
+    directoryPrefix += FILE_SEP "gvki";
+    DEBUG_MSG("Directory prefix is \"" << directoryPrefix << "\"");
+
+    // Keep trying a directoryPrefix name with a number as suffix
     // until we find an available one or we exhaust the maximum
     // allowed number
     while (count < maxFiles)
     {
         stringstream ss;
-        ss <<  directory << "-" << count;
+        ss <<  directoryPrefix << "-" << count;
         ++count;
 
-        // Make the directory
+        // Make the directoryPrefix
         if (mkdir(ss.str().c_str(), 0770) != 0)
         {
             if (errno != EEXIST)
             {
                 perror("Failed to setup directory");
-                ERROR_MSG("Directory was :" << directory);
+                ERROR_MSG("Directory was :" << directoryPrefix);
                 exit(1);
             }
 
