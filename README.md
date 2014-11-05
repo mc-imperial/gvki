@@ -41,7 +41,7 @@ Linux/OSX
 
 ```
 $ mkdir gvki
-$ git clone git://github.com/delcypher/gvki.git src
+$ git clone git://github.com/mc-imperial/gvki.git src
 $ mkdir build
 $ cd build
 $ cmake -DENABLE_TESTING:BOOL=ON ../src/
