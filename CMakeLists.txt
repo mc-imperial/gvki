@@ -13,8 +13,17 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/findopencl")
 ###############################################################################
 # We don't necessarily need the library
 find_package(OpenCL)
-if (OPENCL_FOUND)
+
+# It's possible to build without the library itself
+# on some platforms.
+if (OPENCL_INCLUDE_DIRS)
     include_directories(${OPENCL_INCLUDE_DIRS})
+else()
+    message(FATAL_ERROR "Can't build without OpenCL header files")
+endif()
+
+# The library and the header file were found
+if (OPENCL_FOUND)
     list(GET OPENCL_LIBRARIES 0 OPENCL_LIBRARY_ABS_PATH)
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -33,6 +42,12 @@ if (OPENCL_FOUND)
     endif()
 else()
     set(OPENCL_LIBRARY_ABS_PATH "UNKNOWN")
+
+    # We must have the OpenCL library on OSX
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        message(FATAL_ERROR "OpenCL library is required on OSX")
+    endif()
+
 endif()
 
 ###############################################################################
