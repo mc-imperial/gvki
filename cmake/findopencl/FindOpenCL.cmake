@@ -58,3 +58,6 @@ endif()
 
 # Handle QUIET and REQUIRED and check the necessary variables were set
 find_package_handle_standard_args(OpenCL DEFAULT_MSG OPENCL_LIBRARIES OPENCL_INCLUDE_DIRS)
+
+message(STATUS "OPENCL_INCLUDE_DIRS are ${OPENCL_INCLUDE_DIRS}")
+message(STATUS "OPENCL_LIBRARIES are ${OPENCL_LIBRARIES}")
