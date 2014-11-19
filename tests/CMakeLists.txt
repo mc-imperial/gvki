@@ -11,8 +11,7 @@ macro(GVKI_TEST test)
         add_dependencies(${testWithoutExt}_gvki_preload GVKI_preload)
         add_dependencies(check ${testWithoutExt}_gvki_preload)
 
-        # Ensure each test goes in its own directory to simplify testing
-        set(OutputDir "${CMAKE_CURRENT_BINARY_DIR}/${testWithoutExt}_gvki_preload.d")
+        set(OutputDir ${CMAKE_CURRENT_BINARY_DIR})
         set_target_properties(${testWithoutExt}_gvki_preload
                               PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                          ${OutputDir}
@@ -21,6 +20,9 @@ macro(GVKI_TEST test)
         foreach (kernel ${ARGN})
             file(COPY ${kernel} DESTINATION ${OutputDir})
         endforeach()
+
+        # Create logging directory
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gvki_preload.log.d")
     endif()
 
     # Macro library
@@ -32,7 +34,7 @@ macro(GVKI_TEST test)
     add_dependencies(check ${testWithoutExt}_gvki_macro)
 
     # Ensure each test goes in its own directory to simplify testing
-    set(OutputDir "${CMAKE_CURRENT_BINARY_DIR}/${testWithoutExt}_gvki_macro.d")
+    set(OutputDir ${CMAKE_CURRENT_BINARY_DIR})
     set_target_properties(${testWithoutExt}_gvki_macro
                           PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                           ${OutputDir}
@@ -42,6 +44,8 @@ macro(GVKI_TEST test)
         file(COPY ${kernel} DESTINATION ${OutputDir})
     endforeach()
 
+    # Create logging directory
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/gvki_macro.log.d")
 endmacro()
 
 find_package(PythonInterp REQUIRED)

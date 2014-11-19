@@ -28,17 +28,24 @@ def printOk(msg):
 
 
 class LibTest(object):
-    def __init__(self, path):
+    def __init__(self, path, outputDirRoot):
         self.path = os.path.abspath(path)
+        self.outputDirRoot = outputDirRoot
+        assert os.path.exists(path)
+        assert os.path.exists(outputDirRoot) and os.path.isdir(outputDirRoot)
 
     def _run(self, extra_env):
         logging.info('*** Running : {} ***'.format(self.path))
+
+        expectedOutputDir = os.path.join(self.outputDirRoot, "gvki-0")
+        assert not os.path.exists(expectedOutputDir)
+
+        # Tell the library to use this as the output directory for logging
+        extra_env['GVKI_ROOT'] = self.outputDirRoot
+
         env = copy.deepcopy(os.environ)
         env.update(extra_env)
         logging.debug('env: {}'.format(env))
-
-        expectedOutputDir = os.path.join(os.path.dirname(self.path), "gvki-0")
-        assert not os.path.exists(expectedOutputDir)
 
         retcode = subprocess.call(self.path, env=env, stdin=None, stdout=None, stderr=None, cwd=os.path.dirname(self.path), shell=False)
         if retcode != 0:
@@ -75,12 +82,17 @@ class LibTest(object):
         return self.path < other.path
 
 class MacroLibTest(LibTest):
+    def __init__(self, path):
+        outputDir = os.path.join( os.path.dirname(os.path.abspath(path)), 'gvki_macro.log.d')
+        super(MacroLibTest, self).__init__(path, outputDir)
+
     def run(self):
         return self._run({})
 
 class PreloadLibTest(LibTest):
     def __init__(self, path, libPath):
-        super(PreloadLibTest, self).__init__(path)
+        outputDir = os.path.join( os.path.dirname(os.path.abspath(path)), 'gvki_preload.log.d')
+        super(PreloadLibTest, self).__init__(path, outputDir)
         self.libPath = libPath
 
     def __lt__(self, other):
