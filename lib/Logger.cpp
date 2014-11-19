@@ -6,6 +6,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include "string.h"
 #include "gvki/Debug.h"
 
 
@@ -47,8 +48,7 @@ Logger::Logger()
         DIR* dh = opendir(envTemp);
         if (dh == NULL)
         {
-            perror("Could not access directory");
-            ERROR_MSG("Directory was :" << envTemp);
+            ERROR_MSG(strerror(errno) << ". Directory was :" << envTemp);
             exit(1);
         }
         else
@@ -67,7 +67,7 @@ Logger::Logger()
         char* cwdResult = getcwd(cwdArray, sizeof(cwdArray)/sizeof(char));
         if (!cwdResult)
         {
-            perror("Could not read the current working directory");
+            ERROR_MSG(strerror(errno) << ". Could not read the current working directory");
             exit(1);
         }
         else
@@ -91,8 +91,7 @@ Logger::Logger()
         {
             if (errno != EEXIST)
             {
-                perror("Failed to setup directory");
-                ERROR_MSG("Directory was :" << directoryPrefix);
+                ERROR_MSG(strerror(errno) << ". Directory was :" << directoryPrefix);
                 exit(1);
             }
 
