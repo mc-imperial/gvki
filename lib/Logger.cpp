@@ -157,8 +157,8 @@ void Logger::dump(cl_kernel k)
         // Emit array element seperator
         // to seperate from previous dump
         *output << "," << endl;
-        isFirst = false;
     }
+    isFirst = false;
 
     *output << "{" << endl << "\"language\": \"OpenCL\"," << endl;
 
