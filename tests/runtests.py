@@ -12,7 +12,9 @@ except ImportError:
     import ConfigParser as cp
 
 import copy
+import filecmp
 import glob
+import json
 import logging
 import os
 import re
@@ -28,8 +30,20 @@ def printOk(msg):
 
 
 class LibTest(object):
+
+    # We expect this to be global to all tests so we make it
+    # a class rather than object member
+    testSrcRootPath = None
+
     def __init__(self, path, outputDirRoot):
         self.path = os.path.abspath(path)
+        assert os.path.isfile(self.path)
+
+        self.referenceOutputDir = os.path.join(LibTest.testSrcRootPath, os.path.basename( os.path.dirname(self.path)), 'reference-output')
+        logging.info('referenceOutputDir:{}'.format(self.referenceOutputDir))
+        assert len(self.referenceOutputDir) > 0
+        assert os.path.isdir(self.referenceOutputDir)
+
         self.outputDirRoot = outputDirRoot
         assert os.path.exists(path)
         assert os.path.exists(outputDirRoot) and os.path.isdir(outputDirRoot)
@@ -37,8 +51,8 @@ class LibTest(object):
     def _run(self, extra_env):
         logging.info('*** Running : {} ***'.format(self.path))
 
-        expectedOutputDir = os.path.join(self.outputDirRoot, "gvki-0")
-        assert not os.path.exists(expectedOutputDir)
+        gvkiOutputDir = os.path.join(self.outputDirRoot, "gvki-0")
+        assert not os.path.exists(gvkiOutputDir)
 
         # Tell the library to use this as the output directory for logging
         extra_env['GVKI_ROOT'] = self.outputDirRoot
@@ -51,27 +65,61 @@ class LibTest(object):
         if retcode != 0:
             printError('{} failed during execution'.format(self.path))
             return 1
-        else:
 
-            if not os.path.exists(expectedOutputDir):
-                printError('{} failed. OutputDir missing'.format(self.path))
+        if not os.path.exists(gvkiOutputDir):
+            printError('{} failed. OutputDir missing'.format(self.path))
+            return 1
+
+        expectedJSONFile = os.path.join(gvkiOutputDir, 'log.json')
+
+        if not os.path.exists(expectedJSONFile):
+            printError('{} failed. JSON file is missing'.format(self.path))
+            return 1
+
+        # Check that we have valid JSON (basically just a syntax check)
+        with open(expectedJSONFile) as f:
+            try:
+                parsed = json.load(f)
+            except Exception as e:
+                printError('Could not parse JSON file "{}". {}'.format(expectedJSONFile, str(e)))
                 return 1
-            else:
-                expectedJSONFile = os.path.join(expectedOutputDir, 'log.json')
 
-                if not os.path.exists(expectedJSONFile):
-                    printError('{} failed. JSON file is missing'.format(self.path))
-                    return 1
+        # There should be at least one kernel
+        recordedKernels=glob.glob(gvkiOutputDir + os.path.sep + '*.cl')
+        logging.info('Recorded kernels: {}'.format(recordedKernels))
+        if len(recordedKernels) == 0:
+            printError('{} failed. No kernels recorded'.format(self.path))
+            return 1
 
-                # FIXME: Check the contents of the JSON file and kernel(s) look right
+        # Compare against the reference output
+        logging.info('Reference outputdir:{}'.format(self.referenceOutputDir))
 
-                # There should be at least one kernel
-                recordedKernels=glob.glob(expectedOutputDir + os.path.sep + '*.cl')
-                logging.info('Recorded kernels: {}'.format(recordedKernels))
-                if len(recordedKernels) == 0:
-                    printError('{} failed. No kernels recorded'.format(self.path))
-                    return 1
+        # Make sure the list of files to compare is a union of the files
+        # present so we catch files not present in the other
+        filesToCompare = set(f for f in os.listdir(self.referenceOutputDir) if os.path.isfile( os.path.join(self.referenceOutputDir, f)) )
+        files = set(f for f in os.listdir(gvkiOutputDir) if os.path.isfile( os.path.join(gvkiOutputDir, f)) )
+        filesToCompare = filesToCompare.union(files)
+        assert len(filesToCompare) > 0
 
+        # Check for mismatching files
+        (matches, mismatches, errors) = filecmp.cmpfiles(self.referenceOutputDir, gvkiOutputDir, filesToCompare, shallow = True)
+        logging.info('Comparing against reference output:\nmatches:{},\nmismatches:{},\nerror:\{}'.format(
+                     matches, mismatches, errors)
+                    )
+
+        if len(errors) > 0:
+            printError('There are files not common to the reference output and the actual output ({})'.format(errors))
+            return 1
+
+        if len(mismatches) > 0:
+            printError('There are mismatches between the reference output and the actual output ({})'.format(mismatches))
+            return 1
+
+        if len(matches) < 1:
+            printError('No comparisions were done!')
+            return 1
+
+        # FIXME: Check the contents of the JSON file and kernel(s) look right
 
         printOk('{} passed'.format(self.path))
         return 0
@@ -126,12 +174,15 @@ def main(args):
     preloadlibPath = config.get('settings', 'preloadLibPath')
     preloadlibPath = preloadlibPath.replace("//","/")
     logging.debug('preloadLibPath is "{}"'.format(preloadlibPath))
-
     if not os.path.exists(preloadlibPath):
         logging.error('preloadLibPath "{}" does not exist'.format(preloadlibPath))
         return 1
 
-    
+    LibTest.testSrcRootPath = config.get('settings', 'testSrcRootPath')
+    logging.debug('testSrcPath is "{}"'.format(LibTest.testSrcRootPath))
+    if not os.path.exists(LibTest.testSrcRootPath):
+        logging.error('testSrcPath "{}" does not exist'.format(LibTest.testSrcRootPath))
+        return 1
 
     logging.info('Scanning for tests in "{}"'.format(parsedArgs.directory))
 
