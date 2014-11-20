@@ -90,3 +90,4 @@ add_custom_target(check
 # Add test directories
 add_subdirectory(HelloWorld)
 add_subdirectory(HelloWorldGlobalOffset)
+add_subdirectory(HelloWorldMultipleInvocations)

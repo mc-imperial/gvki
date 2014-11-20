@@ -1,0 +1,1 @@
+GVKI_TEST(HelloWorldMultipleInvocations.cpp HelloWorld.cl)
