@@ -1,0 +1,1 @@
+GVKI_TEST(HelloWorldGlobalOffset.cpp HelloWorldGlobalOffset.cl)
