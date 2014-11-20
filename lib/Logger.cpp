@@ -317,16 +317,8 @@ static bool file_exists(std::string& name) {
 // Is this correct?
 bool ProgramInfoCacheCompare::operator() (const ProgramInfo& lhs, const ProgramInfo& rhs) const
 {
-    if ( lhs.sources.size() == rhs.sources.size() )
-        return lhs.sources.size() < rhs.sources.size();
-
-    for (int index=0; index < lhs.sources.size() -1; ++index)
-    {
-        if (lhs.sources[index] != rhs.sources[index])
-            return lhs.sources[index] < rhs.sources[index];
-    }
-
-    return lhs.sources[ lhs.sources.size() -1 ] < rhs.sources[ rhs.sources.size() -1];
+    // Use the fact that a strict-weak order is already defined over std::vector<>
+    return lhs.sources < rhs.sources;
 }
 
 std::string Logger::dumpKernelSource(KernelInfo& ki)
