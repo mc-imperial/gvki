@@ -49,6 +49,12 @@ struct KernelInfo
     std::vector<size_t> localWorkSize;
 };
 
+struct ProgramInfoCacheCompare
+{
+      bool operator() (const ProgramInfo& lhs, const ProgramInfo& rhs) const;
+};
+
+typedef std::map<ProgramInfo, std::string, ProgramInfoCacheCompare> ProgCacheMapTy;
 class Logger
 {
     public:
@@ -73,7 +79,7 @@ class Logger
         void printJSONKernelArgumentInfo(ArgInfo& ai);
         std::string dumpKernelSource(KernelInfo& ki);
 
-
+        ProgCacheMapTy WrittenKernelFileCache;
 };
 
 }

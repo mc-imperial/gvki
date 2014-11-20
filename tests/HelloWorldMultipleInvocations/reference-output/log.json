@@ -13,7 +13,7 @@
 },
 {
 "language": "OpenCL",
-"kernel_file": "hello_kernel.1.cl",
+"kernel_file": "hello_kernel.0.cl",
 "global_size": [ 1000],
 "local_size": [ 1],
 "entry_point": "hello_kernel",

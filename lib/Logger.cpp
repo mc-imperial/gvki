@@ -313,8 +313,35 @@ static bool file_exists(std::string& name) {
 	return result;
 }
 
+// Define the strict weak ordering over ProgramInfo instances
+// Is this correct?
+bool ProgramInfoCacheCompare::operator() (const ProgramInfo& lhs, const ProgramInfo& rhs) const
+{
+    if ( lhs.sources.size() == rhs.sources.size() )
+        return lhs.sources.size() < rhs.sources.size();
+
+    for (int index=0; index < lhs.sources.size() -1; ++index)
+    {
+        if (lhs.sources[index] != rhs.sources[index])
+            return lhs.sources[index] < rhs.sources[index];
+    }
+
+    return lhs.sources[ lhs.sources.size() -1 ] < rhs.sources[ rhs.sources.size() -1];
+}
+
 std::string Logger::dumpKernelSource(KernelInfo& ki)
 {
+    ProgramInfo& pi = programs[ki.program];
+
+    // See if we can used a file that we already printed.
+    // This avoid writing duplicate files.
+    ProgCacheMapTy::iterator it = WrittenKernelFileCache.find(pi);
+    if ( it != WrittenKernelFileCache.end() )
+    {
+        return it->second;
+    }
+
+
     int count = 0;
     bool success = false;
     // FIXME: I really want a std::unique_ptr
@@ -352,7 +379,6 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
     }
 
     // Write kernel source
-    ProgramInfo& pi = programs[ki.program];
 
     for (vector<string>::const_iterator b = pi.sources.begin(), e = pi.sources.end(); b != e; ++b)
     {
@@ -362,5 +388,10 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
     // Urgh this is bad, need RAII!
     kos->close();
     delete kos;
+
+    // Store in cache
+    assert(WrittenKernelFileCache.count(pi) == 0 && "ProgramInfo already in cache!");
+    WrittenKernelFileCache[pi] = theKernelPath;
+
     return theKernelPath;
 }
