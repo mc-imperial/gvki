@@ -134,7 +134,7 @@ void Logger::openLog()
 void Logger::closeLog()
 {
     // End of JSON array
-    *output << std::endl << "]";
+    *output << std::endl << "]" << std::endl;
     output->close();
 }
 
