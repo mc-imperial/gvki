@@ -1,4 +1,13 @@
 # Macro for creating a tests
+# The arguments are
+# <test> [ <kernel_file> [ <kernel_file> [...] ] ]
+#
+# <test> - The name of the host code source file to compile and run
+# <kernel_file> - The name of a kernel file to copy over to the build directory.
+#                 Multiple files can be specified here if necessary
+#
+# Note this macro should **ONLY BE USED ONCE** inside a directory because
+# each test should have its own directory
 macro(GVKI_TEST test)
     get_filename_component(testWithoutExt ${test} NAME_WE)
 
