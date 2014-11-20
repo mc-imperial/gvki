@@ -166,10 +166,21 @@ void Logger::dump(cl_kernel k)
 
     *output << "\"kernel_file\": \"" << kernelSourceFile << "\"," << endl;
 
-    // Not officially supported but let's emit it anyway
-    *output << "\"global_offset\": ";
-    printJSONArray(ki.globalWorkOffset);
-    *output << "," << endl;
+    // FIXME: Teach GPUVerify how to handle non zero global_offset
+    // FIXME: Document this json attribute!
+    // Only emit global_offset if its non zero
+    bool hasNonZeroGlobalOffset = false;
+    for (int index=0; index < ki.globalWorkOffset.size() ; ++index)
+    {
+        if (ki.globalWorkOffset[index] != 0)
+            hasNonZeroGlobalOffset = true;
+    }
+    if (hasNonZeroGlobalOffset)
+    {
+        *output << "\"global_offset\": ";
+        printJSONArray(ki.globalWorkOffset);
+        *output << "," << endl;
+    }
 
     *output << "\"global_size\": ";
     printJSONArray(ki.globalWorkSize);
