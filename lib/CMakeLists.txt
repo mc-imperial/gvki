@@ -1,4 +1,4 @@
-set(SOURCES InterceptedHostFunctions.cpp UnderlyingCaller.cpp Logger.cpp)
+set(SOURCES InterceptedHostFunctions.cpp UnderlyingCaller.cpp Logger.cpp GlobalLogFile.cpp)
 
 # The LD_PRELOAD library
 if (NOT WIN32)

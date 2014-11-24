@@ -1,6 +1,5 @@
 #include "gvki/opencl_header.h"
 #include <cstdlib>
-#include <iostream>
 #include "gvki/UnderlyingCaller.h"
 #include "gvki/Logger.h"
 #include "gvki/Debug.h"

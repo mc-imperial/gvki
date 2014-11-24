@@ -87,6 +87,7 @@ Special environment variables
 
 Setting various environment variables changes its behaviour
 
-* ``GVKI_DEBUG`` setting this causes debug information to be sent to stderr during interception.
+* ``GVKI_DEBUG`` Setting this causes debug information to be sent to stderr during interception.
 * ``GVKI_ROOT`` is the directory that ``gvki-*`` directories are created in. If not set the current working
   directory is used.
+  * ``GVKI_LOG_FILE`` Setting this to a valid file path will cause logging messages to be written to a file in addition to the normal stderr output.
