@@ -303,7 +303,7 @@ int main(int argc, char** argv)
 
     size_t globalWorkSize[1] = { ARRAY_SIZE };
     size_t localWorkSize[1] = { 1 };
-    size_t globalWorkOffset[1] { 5 };
+    size_t globalWorkOffset[1] = { 5 };
 
     // Queue the kernel up for execution across the array
     errNum = clEnqueueNDRangeKernel(commandQueue, kernel, 1, globalWorkOffset,
