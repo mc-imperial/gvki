@@ -295,9 +295,11 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
     *output << " \"value\": \"0x";
     // Print the value as hex
     uint8_t* asByte = (uint8_t*) ai.argValue;
-    for (int byteIndex=0; byteIndex < ai.argSize; ++byteIndex)
+    // We assume the host is little endian so to print the values
+    // we need to go through the array bytes backwards
+    for (int byteIndex= ai.argSize -1; byteIndex >=0 ; --byteIndex)
     {
-       *output << setw(2) << setfill('0') << std::hex << asByte[byteIndex];
+       *output << std::hex << std::setfill('0') << std::setw(2) << ( (unsigned) asByte[byteIndex]);
     }
     *output << "\"" << std::dec; //std::hex is sticky so switch back to decimal
 
