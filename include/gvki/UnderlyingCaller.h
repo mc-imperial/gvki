@@ -77,6 +77,15 @@ class UnderlyingCaller
                                              );
         clCreateKernelTy clCreateKernelU;
 
+        typedef cl_int (*clCreateKernelsInProgramTy)(cl_program,
+                                                     cl_uint,
+                                                     cl_kernel*,
+                                                     cl_uint*
+                                                    );
+
+        clCreateKernelsInProgramTy clCreateKernelsInProgramU;
+
+
         typedef cl_int (*clSetKernelArgTy)(cl_kernel,
                                            cl_uint,
                                            size_t,

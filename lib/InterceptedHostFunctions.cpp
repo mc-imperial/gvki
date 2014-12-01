@@ -284,14 +284,74 @@ DEFN(clCreateKernel)
 
 cl_int
 DEFN(clCreateKernelsInProgram)
-    (cl_program     /* program */,
-     cl_uint        /* num_kernels */,
-     cl_kernel *    /* kernels */,
-     cl_uint *      /* num_kernels_ret */
+    (cl_program     program,
+     cl_uint        num_kernels,
+     cl_kernel *    kernels,
+     cl_uint *      num_kernels_ret
     )
 {
-    DEBUG_MSG("Intercepted clCreatKernelsInProgram : NOT SUPPORTED!");
-    exit(1);
+    DEBUG_MSG("Intercepted clCreatKernelsInProgram()");
+    cl_int success = CL_SUCCESS;
+    success = UnderlyingCaller::Singleton().clCreateKernelsInProgramU(program, num_kernels, kernels, num_kernels_ret);
+
+    if (success == CL_SUCCESS && kernels != NULL)
+    {
+        Logger& l = Logger::Singleton();
+        assert(num_kernels > 0 && "num_kernels had an invalid value");
+        assert(l.programs.count(program) == 1 && "Program was not logged!");
+
+        for(int i=0; i < num_kernels; ++i)
+        {
+            cl_kernel k = kernels[i];
+            l.kernels[k] = KernelInfo();
+
+            // Make sure we work on the version in the container
+            KernelInfo& ki = l.kernels[k];
+            ki.program = program;
+
+            // Get the entry point name
+            size_t stringSize = 0;
+            cl_int genSuccess = clGetKernelInfo(k,
+                                                CL_KERNEL_FUNCTION_NAME,
+                                                0,
+                                                NULL,
+                                                &stringSize
+                                               );
+            if (genSuccess != CL_SUCCESS)
+            {
+                ERROR_MSG("Failed to get size of kernel name");
+                exit(1);
+            }
+
+            assert(stringSize > 0);
+
+            char* kernelName = (char*) malloc(sizeof(char)*stringSize);
+            if (kernelName == NULL)
+            {
+                ERROR_MSG("Failed to malloc() memory for cstring of size " << stringSize);
+                exit(1);
+            }
+
+            genSuccess = clGetKernelInfo(k,
+                                         CL_KERNEL_FUNCTION_NAME,
+                                         stringSize,
+                                         kernelName,
+                                         NULL
+                                        );
+
+            if (genSuccess != CL_SUCCESS)
+            {
+                ERROR_MSG("Failed to get kernel name");
+                exit(1);
+            }
+
+            ki.entryPointName = std::string(kernelName);
+            DEBUG_MSG("Kernel \"" << ki.entryPointName << "\" created");
+            free(kernelName);
+        }
+    }
+
+    return success;
 }
 
 cl_int

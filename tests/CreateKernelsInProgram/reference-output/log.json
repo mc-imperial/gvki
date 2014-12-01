@@ -1,0 +1,26 @@
+[
+{
+"language": "OpenCL",
+"kernel_file": "simple0.0.cl",
+"global_size": [ 64],
+"local_size": [ 1],
+"entry_point": "simple0",
+"kernel_arguments": [ 
+{"type": "array","size": 256},
+{"type": "array","size": 256},
+{"type": "array","size": 256}
+]
+},
+{
+"language": "OpenCL",
+"kernel_file": "simple0.0.cl",
+"global_size": [ 64],
+"local_size": [ 1],
+"entry_point": "simple1",
+"kernel_arguments": [ 
+{"type": "array","size": 256},
+{"type": "array","size": 256},
+{"type": "array","size": 256}
+]
+}
+]

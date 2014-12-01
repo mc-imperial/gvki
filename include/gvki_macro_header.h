@@ -80,6 +80,12 @@ clCreateKernel_hook(cl_program      /* program */,
                     const char *    /* kernel_name */,
                     cl_int *        /* errcode_ret */);
 
+extern cl_int
+clCreateKernelsInProgram_hook(cl_program     /* program */,
+                              cl_uint        /* num_kernels */,
+                              cl_kernel *    /* kernels */,
+                              cl_uint *      /* num_kernels_ret */);
+
 
 extern cl_int
 clSetKernelArg_hook(cl_kernel    /* kernel */,
@@ -111,6 +117,7 @@ clEnqueueNDRangeKernel_hook(cl_command_queue /* command_queue */,
 #define clCreateProgramWithSource clCreateProgramWithSource_hook
 #define clBuildProgram clBuildProgram_hook
 #define clCreateKernel clCreateKernel_hook
+#define clCreateKernelsInProgram clCreateKernelsInProgram_hook
 #define clSetKernelArg clSetKernelArg_hook
 #define clEnqueueNDRangeKernel clEnqueueNDRangeKernel_hook
 

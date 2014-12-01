@@ -66,6 +66,7 @@ UnderlyingCaller::UnderlyingCaller()
     SET_FCN_PTR(clCreateProgramWithSource)
     SET_FCN_PTR(clBuildProgram)
     SET_FCN_PTR(clCreateKernel)
+    SET_FCN_PTR(clCreateKernelsInProgram)
     SET_FCN_PTR(clSetKernelArg)
     SET_FCN_PTR(clEnqueueNDRangeKernel)
 };
