@@ -302,8 +302,20 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 
     }
 
-    // FIXME: Check for cl_sampler
-    //
+    // Hack: a similar hack for the samplers
+    if (ai.argSize == sizeof(cl_sampler))
+    {
+       cl_sampler mightBecl_sampler = *((cl_sampler*) ai.argValue);
+
+       // We might be reading invalid data now
+       if (samplers.count(mightBecl_sampler) == 1)
+       {
+           // We're going to assume it's cl_mem that we saw before
+           *output << "\"type\": \"sampler\"}";
+           return;
+       }
+
+    }
 
     // I guess it's scalar???
     *output << "\"type\": \"scalar\",";

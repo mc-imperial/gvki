@@ -186,15 +186,34 @@ DEFN(clCreateImage)
 
 cl_sampler
 DEFN(clCreateSampler)
-    (cl_context          /* context */,
-     cl_bool             /* normalized_coords */,
-     cl_addressing_mode  /* addressing_mode */,
-     cl_filter_mode      /* filter_mode */,
-     cl_int *            /* errcode_ret */)
+    (cl_context          context,
+     cl_bool             normalized_coords,
+     cl_addressing_mode  addressing_mode,
+     cl_filter_mode      filter_mode,
+     cl_int *            errcode_ret)
 {
     DEBUG_MSG("Intercepted clCreateSampler()");
-    ERROR_MSG("Not supported!!");
-    exit(1);
+
+    cl_int success = CL_SUCCESS;
+    cl_sampler sampler = UnderlyingCaller::Singleton().clCreateSamplerU(context,
+                                                                        normalized_coords,
+                                                                        addressing_mode,
+                                                                        filter_mode,
+                                                                        &success
+                                                                       );
+    if (success == CL_SUCCESS)
+    {
+        Logger& l = Logger::Singleton();
+
+        SamplerInfo si;
+        si.normalized_coords = normalized_coords;
+        si.addressing_mode = addressing_mode;
+        si.filter_mode = filter_mode;
+        l.samplers[sampler] = si;
+    }
+
+    if (errcode_ret != NULL)
+        *errcode_ret = success;
 }
 
 /* 5.6 Program objects */

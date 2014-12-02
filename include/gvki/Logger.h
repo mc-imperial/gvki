@@ -24,6 +24,13 @@ struct ImageInfo
    cl_mem_object_type type;
 };
 
+struct SamplerInfo
+{
+    cl_bool normalized_coords;
+    cl_addressing_mode addressing_mode;
+    cl_filter_mode filter_mode;
+};
+
 struct ProgramInfo
 {
     std::vector<std::string> sources;
@@ -59,6 +66,7 @@ class Logger
     public:
         std::map<cl_mem, BufferInfo> buffers;
         std::map<cl_mem, ImageInfo> images;
+        std::map<cl_sampler, SamplerInfo> samplers;
         std::map<cl_program, ProgramInfo> programs;
         std::map<cl_kernel, KernelInfo> kernels;
         std::string directory;
