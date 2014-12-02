@@ -140,7 +140,7 @@ DEFN(clCreateImage3D)
     return img;
 }
 
-#ifdef CL_VERSION_1_1
+#ifdef CL_VERSION_1_2
 cl_mem
 DEFN(clCreateImage)
     (cl_context             context,
