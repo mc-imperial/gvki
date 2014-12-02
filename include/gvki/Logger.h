@@ -15,14 +15,13 @@ struct BufferInfo
     void* data;
     cl_mem_flags flags;
     BufferInfo() : size(0), data(0), flags(0) {}
+};
 
-    enum BufferTy
-    {
-        MEMORYBUFFER,
-        IMAGE2D,
-        IMAGE3D
-    };
-    BufferTy bufferType;
+struct ImageInfo
+{
+   // TODO: Add more fields describing the image
+   cl_mem_flags flags;
+   cl_mem_object_type type;
 };
 
 struct ProgramInfo
@@ -59,6 +58,7 @@ class Logger
 {
     public:
         std::map<cl_mem, BufferInfo> buffers;
+        std::map<cl_mem, ImageInfo> images;
         std::map<cl_program, ProgramInfo> programs;
         std::map<cl_kernel, KernelInfo> kernels;
         std::string directory;

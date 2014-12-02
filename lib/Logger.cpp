@@ -287,6 +287,21 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 
     }
 
+    // Hack: a similar hack of the image types
+    if (ai.argSize == sizeof(cl_mem))
+    {
+       cl_mem mightBecl_mem = *((cl_mem*) ai.argValue);
+
+       // We might be reading invalid data now
+       if (images.count(mightBecl_mem) == 1)
+       {
+           // We're going to assume it's cl_mem that we saw before
+           *output << "\"type\": \"image\"}";
+           return;
+       }
+
+    }
+
     // FIXME: Check for cl_sampler
     //
 

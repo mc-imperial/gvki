@@ -43,7 +43,6 @@ DEFN(clCreateBuffer)
         bi.size = size;
         bi.data = host_ptr;
         bi.flags = flags;
-        bi.bufferType = BufferInfo::MEMORYBUFFER;
         l.buffers[buffer] = bi;
     }
 
@@ -92,8 +91,11 @@ DEFN(clCreateImage2D)
     if (success == CL_SUCCESS)
     {
         Logger& l = Logger::Singleton();
-        ERROR_MSG("Not supported!");
-        exit(1);
+
+        ImageInfo ii;
+        ii.flags = flags;
+        ii.type = CL_MEM_OBJECT_IMAGE2D;
+        l.images[img] = ii;
     }
 
     if (errcode_ret)
@@ -115,6 +117,8 @@ DEFN(clCreateImage3D)
      void *                  host_ptr,
      cl_int *                errcode_ret)
 {
+    DEBUG_MSG("Intercepted clCreate2DImage()");
+
     cl_int success = CL_SUCCESS;
     cl_mem img = UnderlyingCaller::Singleton().clCreateImage3DU(context,
                                                                 flags,
@@ -130,8 +134,11 @@ DEFN(clCreateImage3D)
     if (success == CL_SUCCESS)
     {
         Logger& l = Logger::Singleton();
-        ERROR_MSG("Not supported!");
-        exit(1);
+
+        ImageInfo ii;
+        ii.flags = flags;
+        ii.type = CL_MEM_OBJECT_IMAGE3D;
+        l.images[img] = ii;
     }
 
     if (errcode_ret)
@@ -150,6 +157,7 @@ DEFN(clCreateImage)
      void*                  host_ptr,
      cl_int*                errcode_ret)
 {
+    DEBUG_MSG("Intercepted clCreateImage()");
     cl_int success = CL_SUCCESS;
     cl_mem img = UnderlyingCaller::Singleton().clCreateImageU(context,
                                                               flags,
@@ -161,8 +169,11 @@ DEFN(clCreateImage)
     if (success == CL_SUCCESS)
     {
         Logger& l = Logger::Singleton();
-        ERROR_MSG("Not supported!");
-        exit(1);
+
+        ImageInfo ii;
+        ii.flags = flags;
+        ii.type = image_desc->image_type;
+        l.images[img] = ii;
     }
 
     if (errcode_ret)
