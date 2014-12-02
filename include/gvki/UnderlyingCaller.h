@@ -48,6 +48,17 @@ class UnderlyingCaller
                                            );
         clCreateImage3DTy clCreateImage3DU;
 
+#ifdef CL_VERSION_1_2
+       typedef cl_mem (*clCreateImageTy)(cl_context context,
+                                         cl_mem_flags flags,
+                                         const cl_image_format* image_format,
+                                         const cl_image_desc* image_desc,
+                                         void* host_ptr,
+                                         cl_int*  errcode_ret
+                                        );
+       clCreateImageTy clCreateImageU;
+#endif
+
         typedef cl_sampler (*clCreateSamplerTy)(cl_context,
                                                 cl_bool,
                                                 cl_addressing_mode,

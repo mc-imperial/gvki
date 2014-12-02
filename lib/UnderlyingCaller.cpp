@@ -62,6 +62,11 @@ UnderlyingCaller::UnderlyingCaller()
     SET_FCN_PTR(clCreateImage2D)
     SET_FCN_PTR(clCreateImage3D)
 #pragma GCC diagnostic pop
+
+#ifdef CL_VERSION_1_2
+    SET_FCN_PTR(clCreateImage)
+#endif
+
     SET_FCN_PTR(clCreateSampler)
     SET_FCN_PTR(clCreateProgramWithSource)
     SET_FCN_PTR(clBuildProgram)

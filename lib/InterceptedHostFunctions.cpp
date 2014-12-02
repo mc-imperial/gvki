@@ -140,6 +140,39 @@ DEFN(clCreateImage3D)
     return img;
 }
 
+#ifdef CL_VERSION_1_1
+cl_mem
+DEFN(clCreateImage)
+    (cl_context             context,
+     cl_mem_flags           flags,
+     const cl_image_format* image_format,
+     const cl_image_desc*   image_desc, 
+     void*                  host_ptr,
+     cl_int*                errcode_ret)
+{
+    cl_int success = CL_SUCCESS;
+    cl_mem img = UnderlyingCaller::Singleton().clCreateImageU(context,
+                                                              flags,
+                                                              image_format,
+                                                              image_desc,
+                                                              host_ptr,
+                                                              &success
+                                                             );
+    if (success == CL_SUCCESS)
+    {
+        Logger& l = Logger::Singleton();
+        ERROR_MSG("Not supported!");
+        exit(1);
+    }
+
+    if (errcode_ret)
+        *errcode_ret = success;
+
+    return img;
+}
+#endif
+                        
+
 cl_sampler
 DEFN(clCreateSampler)
     (cl_context          /* context */,

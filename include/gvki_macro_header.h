@@ -49,6 +49,16 @@ clCreateImage3D_hook(cl_context              /* context */,
                      void *                  /* host_ptr */,
                      cl_int *                /* errcode_ret */);
 
+#ifdef CL_VERSION_1_2
+extern cl_mem
+clCreateImage_hook(cl_context              /* context */,
+                   cl_mem_flags            /* flags */,
+                   const cl_image_format*  /* image_format */,
+                   const cl_image_desc*    /* image_desc */,
+                   void*                   /* host_ptr */,
+                   cl_int*                 /* errcode_ret */);
+#endif
+
 
 extern cl_sampler
 clCreateSampler_hook(cl_context          /* context */,
@@ -120,6 +130,10 @@ clEnqueueNDRangeKernel_hook(cl_command_queue /* command_queue */,
 #define clCreateKernelsInProgram clCreateKernelsInProgram_hook
 #define clSetKernelArg clSetKernelArg_hook
 #define clEnqueueNDRangeKernel clEnqueueNDRangeKernel_hook
+
+#ifdef CL_VERSION_1_2
+#define clCreateImage clCreateImage_hook
+#endif
 
 #ifdef __cplusplus
 }
