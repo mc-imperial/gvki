@@ -29,7 +29,7 @@ namespace gvki
 
     GlobalLogFile::~GlobalLogFile()
     {
-        if (output.is_open())
+        if (output.good())
         {
             output << "*** END" << endl << endl;
             output.close();
