@@ -214,6 +214,8 @@ DEFN(clCreateSampler)
 
     if (errcode_ret != NULL)
         *errcode_ret = success;
+
+    return sampler;
 }
 
 /* 5.6 Program objects */
