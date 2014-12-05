@@ -110,6 +110,8 @@ Logger::Logger()
         exit(1);
     }
 
+    DEBUG_MSG("Directory used for logging is \"" << this->directory << "\"");
+
     openLog();
 }
 
