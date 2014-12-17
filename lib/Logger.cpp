@@ -192,7 +192,8 @@ void Logger::dump(cl_kernel k)
     printJSONArray(ki.localWorkSize);
     *output << "," << endl;
 
-    assert(ki.globalWorkOffset.size() == ki.globalWorkSize.size() == ki.localWorkSize.size() &&
+    assert( (ki.globalWorkOffset.size() == ki.globalWorkSize.size()) &&
+            (ki.globalWorkSize.size() == ki.localWorkSize.size()) &&
             "dimension mismatch");
 
     *output << "\"entry_point\": \"" << ki.entryPointName << "\"";
