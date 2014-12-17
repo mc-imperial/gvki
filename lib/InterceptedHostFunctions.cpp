@@ -316,6 +316,32 @@ DEFN(clBuildProgram)
 
 /* 5.7 Kernel objects */
 
+void static gvkiSetupKernelArguments(cl_kernel kernel, KernelInfo& ki)
+{
+    cl_uint numberOfArgs = 0;
+    cl_int success = clGetKernelInfo(kernel,
+                                     CL_KERNEL_NUM_ARGS,
+                                     sizeof(cl_uint),
+                                     &numberOfArgs,
+                                     NULL
+                                    );
+
+    if (success != CL_SUCCESS)
+    {
+        ERROR_MSG("Failed to determine number of arguments to kernel");
+        exit(1);
+    }
+
+    assert(ki.arguments.size() == 0 && "arguments should not have been initialised already");
+    assert(numberOfArgs > 0 && "numberOfArgs should be greater than zero");
+
+    // Set the size of the arguments vector. This never change
+    for (cl_uint index=0; index < numberOfArgs; ++index)
+    {
+        ki.arguments.push_back( ArgInfo() );
+    }
+}
+
 cl_kernel
 DEFN(clCreateKernel)
     (cl_program      program,
@@ -339,6 +365,9 @@ DEFN(clCreateKernel)
         KernelInfo& ki = l.kernels[kernel];
         ki.program = program;
         ki.entryPointName = std::string(kernel_name);
+        gvkiSetupKernelArguments(kernel, ki);
+
+        DEBUG_MSG("Kernel \"" << ki.entryPointName << "\" created");
     }
 
     if (errcode_ret)
@@ -411,6 +440,9 @@ DEFN(clCreateKernelsInProgram)
             }
 
             ki.entryPointName = std::string(kernelName);
+
+            gvkiSetupKernelArguments(k, ki);
+
             DEBUG_MSG("Kernel \"" << ki.entryPointName << "\" created");
             free(kernelName);
         }
@@ -439,10 +471,7 @@ DEFN(clSetKernelArg)
         assert (l.kernels.count(kernel) == 1 && "Kernel was not logged");
         KernelInfo& ki = l.kernels[kernel];
 
-        // Resize arguments vector if necessary
-        if (ki.arguments.size() <= arg_index)
-            ki.arguments.resize(arg_index +1);
-
+        assert(arg_index <= ( ki.arguments.size() -1) && "Invalid argument index for kernel");
         ArgInfo& ai = ki.arguments[arg_index];
 
         if (ai.argValue != NULL)
