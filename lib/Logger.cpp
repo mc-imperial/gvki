@@ -264,7 +264,6 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
     // pointer and finding it's equal zero because it could be a scalar constant
     // (of value 0) or it could be an unintialised array!
 
-    DEBUG_MSG("Note sizeof(cl_mem) == " << sizeof(cl_mem));
     // Hack:
     // It's hard to determine what type the argument is.
     // We can't dereference the void* to check if
