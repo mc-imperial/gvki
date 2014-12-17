@@ -481,16 +481,24 @@ DEFN(clSetKernelArg)
             free((void*) ai.argValue);
         }
 
-        // The user is allowed to do whatever
-        // they want with the memory pointed
-        // to by ``arg_value`` so we need to
-        // copy its contents.
-        //
-        // FIXME: We aren't always free'ing the memory
-        // allocated here because we aren't tracking
-        // cl_kernel or cl_context destruction
-        ai.argValue = malloc(arg_size);
-        memcpy((void*) ai.argValue, arg_value, arg_size);
+        if (arg_value == NULL)
+        {
+            // The client is allowed to set arg_value to NULL (e.g. for __local memory)
+            ai.argValue = NULL;
+        }
+        else
+        {
+            // The user is allowed to do whatever
+            // they want with the memory pointed
+            // to by ``arg_value`` so we need to
+            // copy its contents.
+            //
+            // FIXME: We aren't always free'ing the memory
+            // allocated here because we aren't tracking
+            // cl_kernel or cl_context destruction
+            ai.argValue = malloc(arg_size);
+            memcpy((void*) ai.argValue, arg_value, arg_size);
+        }
 
         ai.argSize = arg_size;
 
