@@ -84,6 +84,18 @@ else ()
     message(FATAL_ERROR "Unsupported platform")
 endif()
 
+# Quick sanity check
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CL_HEADER_PATH "${OPENCL_INCLUDE_DIRS}/OpenCL/cl.h")
+else()
+    set(CL_HEADER_PATH "${OPENCL_INCLUDE_DIRS}/CL/cl.h")
+endif()
+if (OPENCL_INCLUDE_DIRS)
+    if (NOT EXISTS "${CL_HEADER_PATH}")
+        message(FATAL_ERROR "Could not find OpenCL header file in ${CL_HEADER_PATH}")
+    endif()
+endif()
+
 # Handle QUIET and REQUIRED and check the necessary variables were set
 find_package_handle_standard_args(OpenCL DEFAULT_MSG OPENCL_LIBRARIES OPENCL_INCLUDE_DIRS)
 
