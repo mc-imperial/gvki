@@ -51,7 +51,35 @@ elseif (WIN32)
     ###########################################################################
     # Windows
     ###########################################################################
-    message(FATAL_ERROR "Windows support not implemented")
+
+    # There's no standard place for the header files and libraries to live
+    # so we hard code a few guesses. If the header files or libraries aren't
+    # found then the user will need to specify their location manually by doing
+    # something like
+    #
+    # cmake -DOPENCL_INCLUDE_DIRS="/some/path/include" -DOPENCL_LIBRARIES="/some/path/OpenCL.a"
+    #
+    # or use cmake-gui to pick the file/directory.
+    find_path(OPENCL_INCLUDE_DIRS
+              NAMES CL/cl.h CL/cl.hpp
+              # FIXME: Use system introspection to provide HINTS instead
+              PATHS "C:\\Program Files (x86)\\AMD APP SDK\\2.9-1\\include"
+             )
+
+    if (NOT OPENCL_INCLUDE_DIRS)
+        message(WARNING "Could not find OpenCL header file. You will need to specify the location manually")
+    endif()
+    find_library(OPENCL_LIBRARIES
+                 NAMES OpenCL
+                 # FIXME: Use system introspection to provide HINTS instead
+                 PATHS "C:\\Program Files (x86)\\AMD APP SDK\\2.9-1\\lib\\x86_64"
+                 PATHS "C:\\Program Files (x86)\\AMD APP SDK\\2.9-1\\lib\\x86"
+                 DOC "Path to OpenCL library"
+                )
+
+    if (NOT OPENCL_LIBRARIES)
+        message(WARNING "Could not find OpenCL library. You will need to specify the location manually")
+    endif()
 else ()
     message(FATAL_ERROR "Unsupported platform")
 endif()
