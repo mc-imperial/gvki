@@ -1,0 +1,2 @@
+# Try to guess which files are text. For those that are normalise to LF on check-in
+* text=auto
