@@ -1,4 +1,5 @@
 #include "gvki/Logger.h"
+#include "gvki/PathSeperator.h"
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
@@ -17,7 +18,6 @@
 
 // For getcwd()
 #include <unistd.h>
-#define FILE_SEP "/"
 
 using namespace std;
 using namespace gvki;
@@ -74,7 +74,7 @@ Logger::Logger()
             directoryPrefix = cwdResult;
 
     }
-    directoryPrefix += FILE_SEP "gvki";
+    directoryPrefix += PATH_SEP "gvki";
     DEBUG_MSG("Directory prefix is \"" << directoryPrefix << "\"");
 
     // Keep trying a directoryPrefix name with a number as suffix
@@ -120,7 +120,7 @@ void Logger::openLog()
 {
     // FIXME: We should use mkstemp() or something
     std::stringstream ss;
-    ss << directory << FILE_SEP << "log.json";
+    ss << directory << PATH_SEP << "log.json";
     output = new std::ofstream(ss.str().c_str(), std::ofstream::out | std::ofstream::ate);
 
     if (! output->good())
@@ -377,7 +377,7 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
 
         ++count;
 
-        std::string withDir = (directory + FILE_SEP) + ss.str();
+        std::string withDir = (directory + PATH_SEP) + ss.str();
         if (!file_exists(withDir))
         {
            kos = new std::ofstream(withDir.c_str());
