@@ -34,7 +34,13 @@ $ gcc -I/path/to/gvki_src/include/ your_application.c lib/libGVKI_macro.a -o you
 Building
 ========
 
-You need CMake to and the OpenCL headers installed.
+Requirements
+-----------
+
+* CMake >= 2.8.7
+* OpenCL header files
+* OpenCL library (needed for testing only)
+* Python >= 2.7 (needed for testing only)
 
 Linux/OSX
 ---------
