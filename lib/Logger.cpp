@@ -10,14 +10,42 @@
 #include "string.h"
 #include "gvki/Debug.h"
 
-
-// For mkdir(). FIXME: Make windows compatible
 #include <sys/stat.h>
-// For opendir(). FIXME: Make windows compatible
-#include <dirent.h>
 
-// For getcwd()
+#ifndef _WIN32
+
+#include <dirent.h>
 #include <unistd.h>
+#define MKDIR_FAILS(d)     (mkdir(d, 0770) != 0)
+#define DIR_ALREADY_EXISTS (errno == EEXIST)
+
+static void checkDirectoryExists(const char* dirName) {
+    DIR* dh = opendir(dirName);
+    if (dh != NULL)
+    {
+        closedir(dh);
+        return;
+    }
+    ERROR_MSG(strerror(errno) << ". Directory was :" << dirName);
+    exit(1);
+}
+
+#else
+
+#include <inttypes.h>
+#include <Windows.h>
+#define MKDIR_FAILS(d)     (CreateDirectory(ss.str().c_str(), NULL) == 0)
+#define DIR_ALREADY_EXISTS (GetLastError() == ERROR_ALREADY_EXISTS)
+
+static void checkDirectoryExists(const char* dirName) {
+    DWORD ftyp = GetFileAttributesA(dirName);
+    if ((ftyp != INVALID_FILE_ATTRIBUTES) && ftyp & FILE_ATTRIBUTE_DIRECTORY)
+        return;
+    ERROR_MSG(strerror(errno) << ". Directory was :" << dirName);
+    exit(1);
+}
+
+#endif
 
 using namespace std;
 using namespace gvki;
@@ -45,14 +73,8 @@ Logger::Logger()
     if (envTemp)
     {
         DEBUG_MSG("Using GVKI_ROOT value as destination for directories");
-        DIR* dh = opendir(envTemp);
-        if (dh == NULL)
-        {
-            ERROR_MSG(strerror(errno) << ". Directory was :" << envTemp);
-            exit(1);
-        }
-        else
-            closedir(dh);
+
+        checkDirectoryExists(envTemp);
 
         directoryPrefix = envTemp;
 
@@ -63,16 +85,22 @@ Logger::Logger()
         DEBUG_MSG("Using current working directory as destination for directories");
 
         // FIXME: Hard-coding this size is gross
-        char cwdArray[1024];
+        #define MAX_DIR_LENGTH 1024
+
+#ifndef _WIN32
+        char cwdArray[MAX_DIR_LENGTH];
         char* cwdResult = getcwd(cwdArray, sizeof(cwdArray)/sizeof(char));
         if (!cwdResult)
+#else
+        char cwdResult[MAX_DIR_LENGTH];
+        if (GetCurrentDirectory(MAX_DIR_LENGTH, cwdResult) == 0)
+#endif
         {
             ERROR_MSG(strerror(errno) << ". Could not read the current working directory");
             exit(1);
         }
         else
             directoryPrefix = cwdResult;
-
     }
     directoryPrefix += PATH_SEP "gvki";
     DEBUG_MSG("Directory prefix is \"" << directoryPrefix << "\"");
@@ -87,9 +115,9 @@ Logger::Logger()
         ++count;
 
         // Make the directoryPrefix
-        if (mkdir(ss.str().c_str(), 0770) != 0)
+        if (MKDIR_FAILS(ss.str().c_str()))
         {
-            if (errno != EEXIST)
+            if (!DIR_ALREADY_EXISTS)
             {
                 ERROR_MSG(strerror(errno) << ". Directory was :" << directoryPrefix);
                 exit(1);
