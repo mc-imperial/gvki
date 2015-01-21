@@ -333,7 +333,6 @@ void static gvkiSetupKernelArguments(cl_kernel kernel, KernelInfo& ki)
     }
 
     assert(ki.arguments.size() == 0 && "arguments should not have been initialised already");
-    assert(numberOfArgs > 0 && "numberOfArgs should be greater than zero");
 
     // Set the size of the arguments vector. This never change
     for (cl_uint index=0; index < numberOfArgs; ++index)
@@ -471,6 +470,7 @@ DEFN(clSetKernelArg)
         assert (l.kernels.count(kernel) == 1 && "Kernel was not logged");
         KernelInfo& ki = l.kernels[kernel];
 
+        assert( ki.arguments.size() > 0 && "Can't set argument on kernel that does not take any arguments");
         assert(arg_index <= ( ki.arguments.size() -1) && "Invalid argument index for kernel");
         ArgInfo& ai = ki.arguments[arg_index];
 
