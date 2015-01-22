@@ -179,6 +179,8 @@ void Logger::dump(cl_kernel k)
     // Output JSON format defined by
     // http://multicore.doc.ic.ac.uk/tools/GPUVerify/docs/json_format.html
     KernelInfo& ki = kernels[k];
+    assert( programs.count(ki.program) == 1 && "cl_program missing");
+    ProgramInfo& pi = programs[ki.program];
 
     static bool isFirst = true;
 
@@ -219,6 +221,8 @@ void Logger::dump(cl_kernel k)
     *output << "\"local_size\": ";
     printJSONArray(ki.localWorkSize);
     *output << "," << endl;
+
+    *output << "\"compiler_flags\": \"" << pi.compileFlags << "\"," << endl;
 
     assert( (ki.globalWorkOffset.size() == ki.globalWorkSize.size()) &&
             (ki.globalWorkSize.size() == ki.localWorkSize.size()) &&
