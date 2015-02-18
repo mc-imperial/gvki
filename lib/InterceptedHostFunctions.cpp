@@ -319,12 +319,12 @@ DEFN(clBuildProgram)
 void static gvkiSetupKernelArguments(cl_kernel kernel, KernelInfo& ki)
 {
     cl_uint numberOfArgs = 0;
-    cl_int success = clGetKernelInfo(kernel,
-                                     CL_KERNEL_NUM_ARGS,
-                                     sizeof(cl_uint),
-                                     &numberOfArgs,
-                                     NULL
-                                    );
+    cl_int success = UnderlyingCaller::Singleton().clGetKernelInfoU(kernel,
+                                                                    CL_KERNEL_NUM_ARGS,
+                                                                    sizeof(cl_uint),
+                                                                    &numberOfArgs,
+                                                                    NULL
+                                                                   );
 
     if (success != CL_SUCCESS)
     {
@@ -404,12 +404,12 @@ DEFN(clCreateKernelsInProgram)
 
             // Get the entry point name
             size_t stringSize = 0;
-            cl_int genSuccess = clGetKernelInfo(k,
-                                                CL_KERNEL_FUNCTION_NAME,
-                                                0,
-                                                NULL,
-                                                &stringSize
-                                               );
+            cl_int genSuccess = UnderlyingCaller::Singleton().clGetKernelInfoU(k,
+                                                                               CL_KERNEL_FUNCTION_NAME,
+                                                                               0,
+                                                                               NULL,
+                                                                               &stringSize
+                                                                              );
             if (genSuccess != CL_SUCCESS)
             {
                 ERROR_MSG("Failed to get size of kernel name");
@@ -425,12 +425,12 @@ DEFN(clCreateKernelsInProgram)
                 exit(1);
             }
 
-            genSuccess = clGetKernelInfo(k,
-                                         CL_KERNEL_FUNCTION_NAME,
-                                         stringSize,
-                                         kernelName,
-                                         NULL
-                                        );
+            genSuccess = UnderlyingCaller::Singleton().clGetKernelInfoU(k,
+                                                                        CL_KERNEL_FUNCTION_NAME,
+                                                                        stringSize,
+                                                                        kernelName,
+                                                                        NULL
+                                                                       );
 
             if (genSuccess != CL_SUCCESS)
             {
