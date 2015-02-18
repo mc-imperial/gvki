@@ -412,7 +412,8 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
         std::string withDir = (directory + PATH_SEP) + ss.str();
         if (!file_exists(withDir))
         {
-           kos = new std::ofstream(withDir.c_str());
+           // Use Binary mode to try avoid line ending issues on Windows
+           kos = new std::ofstream(withDir.c_str(), std::ofstream::binary);
 
            if (!kos->good())
            {
