@@ -435,30 +435,9 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
     }
 
     // Write kernel source
-    assert( pi.sources.size() > 0 && "Kernel source files are missing");
-    bool hasMultipleSources = pi.sources.size() > 1;
-    int counter = 0;
-    for (vector<string>::const_iterator b = pi.sources.begin(), e = pi.sources.end();
-            b != e; ++b, ++counter)
-    {
-        if (hasMultipleSources)
-        {
-            // For every source reset the line number and filename
-            // otherwise GPUVerify's error message can get confusing.
-            // We do this using the ``#line`` directive. See
-            // https://gcc.gnu.org/onlinedocs/cpp/Line-Control.html
-            //
-            // We need to artificially give each source file a different
-            // name even though they don't actually exist on disk
-            // FIXME: This may make things slightly confusing for end users.
-            //        Is this the right thing to do?
-            stringstream ss;
-            ss << theKernelPath << "._" << counter << ".cl";
-            *kos << "// GVKI Start file[" << counter << "]: \"" << ss.str() << "\"" << endl;
-            *kos << "#line 1 \"" << ss.str() << "\"" << endl;
-        }
 
-        // Write kernel source code
+    for (vector<string>::const_iterator b = pi.sources.begin(), e = pi.sources.end(); b != e; ++b)
+    {
         *kos << *b;
     }
 
