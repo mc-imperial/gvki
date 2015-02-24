@@ -62,11 +62,45 @@ Logger& Logger::Singleton()
 
 Logger::Logger()
 {
+    // FIXME: Reading from the environment probably doesn't belong in here
+    // but it makes implementing the singleton a lot easier
+    const char* doNotUseNumberedDirs = getenv("GVKI_NO_NUM_DIRS");
+    if (doNotUseNumberedDirs)
+    {
+        DEBUG_MSG("Using manual directory");
+        const char* rootDir = getenv("GVKI_ROOT");
+        if (!rootDir)
+        {
+            ERROR_MSG("If using GVKI_NO_NUM_DIRS then GVKI_ROOT must be specified");
+            _exit(1);
+        }
+        initDirectoryManual(rootDir);
+    }
+    else
+    {
+        DEBUG_MSG("Using numbered directory");
+        initDirectoryNumbered();
+    }
+    checkDirectoryExists(this->directory.c_str());
+}
+
+void Logger::initDirectoryManual(const char* rootDir)
+{
+    assert(rootDir && "rootDir cannot be NULL");
+
+    if (MKDIR_FAILS(rootDir))
+    {
+        ERROR_MSG("Failed to create directory \"" << rootDir << ": " << strerror(errno));
+        _exit(1);
+    }
+    this->directory = std::string(rootDir);
+}
+
+void Logger::initDirectoryNumbered()
+{
     int count = 0;
     bool success= false;
 
-    // FIXME: Reading from the environment probably doesn't belong in here
-    // but it makes implementing the singleton a lot easier
     std::string directoryPrefix;
 
     const char* envTemp = getenv("GVKI_ROOT");

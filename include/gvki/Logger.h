@@ -82,6 +82,8 @@ class Logger
         // FIXME: Use std::unique_ptr<> instead
         std::ofstream* output;
         Logger(const Logger& that); /* = delete; */
+        void initDirectoryNumbered();
+        void initDirectoryManual(const char* rootDir);
 
         void printJSONArray(std::vector<size_t>& array);
         void printJSONKernelArgumentInfo(ArgInfo& ai);

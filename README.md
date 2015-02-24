@@ -101,7 +101,12 @@ Output produced
 ===============
 
 When intercepting a ``gvki-<N>`` directory is created where ``<N>``
-is the next available integer. The directory contains the following
+is the next available integer. The location of this directories can
+be controlled using ``GVKI_ROOT``. If ``GVKI_NO_NUM_DIRS`` si specified
+then numbered directories are not created and instead everything is logged
+into ``GVKI_ROOT`` which must not already exist.
+
+The directory contains the following
 
 * ``log.json`` file should which contains information about logged
   executions.
@@ -126,3 +131,4 @@ Setting various environment variables changes its behaviour
 * ``GVKI_ROOT`` is the directory that ``gvki-*`` directories are created in. If not set the current working
   directory is used.
 * ``GVKI_LOG_FILE`` Setting this to a valid file path will cause logging messages to be written to a file in addition to the normal stderr output.
+* ``GVKI_NO_NUM_DIRS`` Setting this causes ``GVKI_ROOT`` to be used as the directory for logging files instead of using ``gvki-*``.
