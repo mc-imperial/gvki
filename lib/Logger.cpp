@@ -269,7 +269,7 @@ void Logger::dump(cl_kernel k)
         *output << endl;
     else
     {
-        *output << "," << endl << "\"kernel_arguments\": [ " << endl;
+        *output << "," << endl << "\"kernel_arguments\": [" << endl;
         for (int argIndex=0; argIndex < ki.arguments.size() ; ++argIndex)
         {
             printJSONKernelArgumentInfo(ki.arguments[argIndex]);
@@ -285,7 +285,7 @@ void Logger::dump(cl_kernel k)
 
 void Logger::printJSONArray(std::vector<size_t>& array)
 {
-    *output << "[ ";
+    *output << "[";
     for (int index=0; index < array.size(); ++index)
     {
         *output << array[index];

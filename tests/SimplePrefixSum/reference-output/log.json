@@ -2,11 +2,11 @@
 {
 "language": "OpenCL",
 "kernel_file": "prefix_sum.0.cl",
-"global_size": [ 8],
-"local_size": [ 8],
+"global_size": [8],
+"local_size": [8],
 "compiler_flags": "",
 "entry_point": "prefix_sum",
-"kernel_arguments": [ 
+"kernel_arguments": [
 {"type": "array","size": 32},
 {"type": "array","size": 32},
 {"type": "scalar", "value": "0x00000003"}
