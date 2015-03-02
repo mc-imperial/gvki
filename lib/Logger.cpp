@@ -82,6 +82,9 @@ Logger::Logger()
         initDirectoryNumbered();
     }
     checkDirectoryExists(this->directory.c_str());
+    DEBUG_MSG("Directory used for logging is \"" << this->directory << "\"");
+
+    openLog();
 }
 
 void Logger::initDirectoryManual(const char* rootDir)
@@ -172,9 +175,6 @@ void Logger::initDirectoryNumbered()
         exit(1);
     }
 
-    DEBUG_MSG("Directory used for logging is \"" << this->directory << "\"");
-
-    openLog();
 }
 
 
@@ -197,6 +197,7 @@ void Logger::openLog()
 
 void Logger::closeLog()
 {
+    assert(output != NULL && "output must not be NULL");
     // End of JSON array
     *output << std::endl << "]" << std::endl;
     output->close();
