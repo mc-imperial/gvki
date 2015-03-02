@@ -53,6 +53,7 @@ struct KernelInfo
     std::vector<size_t> globalWorkOffset;
     std::vector<size_t> globalWorkSize;
     std::vector<size_t> localWorkSize;
+    bool localWorkSizeIsUnconstrained;
 };
 
 struct ProgramInfoCacheCompare

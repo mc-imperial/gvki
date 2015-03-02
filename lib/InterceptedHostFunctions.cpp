@@ -545,6 +545,9 @@ DEFN(clEnqueueNDRangeKernel)
 
         ki.dimensions = work_dim;
 
+        // Assume the local size is concrete
+        ki.localWorkSizeIsUnconstrained = false;
+
         // Resize recorded NDRange vectors if necessary
         if (ki.globalWorkOffset.size() != work_dim)
             ki.globalWorkOffset.resize(work_dim);
@@ -575,9 +578,12 @@ DEFN(clEnqueueNDRangeKernel)
             else
             {
                 // It is implementation defined how to divide the NDRange
-                // in this case. We will make the same size as the global_work_size
-                // so that there is a single work group.
-                ki.localWorkSize[dim] = global_work_size[dim];
+                // in this case. We will emit that the local size is unconstrained
+                ki.localWorkSizeIsUnconstrained = true;
+
+                // Set the values to something, it doesn't really matter what
+                // because we shouldn't write them
+                ki.localWorkSize[dim] = 0;
             }
         }
         
