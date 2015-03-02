@@ -253,25 +253,14 @@ void Logger::dump(cl_kernel k)
     printJSONArray(ki.globalWorkSize);
     *output << "," << endl;
 
-    *output << "\"local_size\": ";
+    // Note if local_size is unconstrained
+    // we just don't emit the ``local_size`` key or its value.
     if (!ki.localWorkSizeIsUnconstrained)
     {
+        *output << "\"local_size\": ";
         printJSONArray(ki.localWorkSize);
+        *output << "," << endl;
     }
-    else
-    {
-        // The local work size is not constrained.
-        *output << "[";
-        assert(ki.localWorkSize.size() > 0);
-        for (int dim=0; dim < ki.localWorkSize.size(); ++dim)
-        {
-            *output << "\"*\"";
-            if (dim < (ki.localWorkSize.size() -1))
-                *output << ",";
-        }
-        *output << "]";
-    }
-    *output << "," << endl;
 
     *output << "\"compiler_flags\": \"" << pi.compileFlags << "\"," << endl;
 

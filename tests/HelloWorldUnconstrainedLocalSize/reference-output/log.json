@@ -3,7 +3,6 @@
 "language": "OpenCL",
 "kernel_file": "hello_kernel.0.cl",
 "global_size": [1000],
-"local_size": ["*"],
 "compiler_flags": "",
 "entry_point": "hello_kernel",
 "kernel_arguments": [
