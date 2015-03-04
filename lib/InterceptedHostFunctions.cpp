@@ -8,8 +8,10 @@
 
 #ifdef MACRO_LIB
 #define API_SUFFIX _hook
+#define GVKI_EXTRA_HOSTCODE_ARGS , const char* compilationUnit, unsigned int lineNumber
 #else
 #define API_SUFFIX
+#define GVKI_EXTRA_HOSTCODE_ARGS
 #endif
 
 // This macro appends API_SUFFIX to its argument
@@ -226,6 +228,7 @@ DEFN(clCreateProgramWithSource)
      const char **     strings,
      const size_t *    lengths,
      cl_int *          errcode_ret
+     GVKI_EXTRA_HOSTCODE_ARGS
     )
 {
     DEBUG_MSG("Intercepted clCreateProgramWithSource()");
@@ -240,7 +243,7 @@ DEFN(clCreateProgramWithSource)
         // Make sure we work on the version in the container
         // so we don't do lots of unnecessary copies
         ProgramInfo& pi = l.programs[program];
-        
+
         if (lengths == NULL)
         {
             // All strings are null terminated
@@ -266,6 +269,15 @@ DEFN(clCreateProgramWithSource)
                 }
             }
         }
+
+#ifdef MACRO_LIB
+        // Log information about the location in the hostcode that we were called
+        // the values are extra arguments for the MACRO_LIB build which come from
+        // the expansion of the GVKI_EXTRA_HOSTCODE_ARGS macro.
+        pi.compilationUnit = compilationUnit;
+        pi.lineNumber = lineNumber;
+        pi.hostCodeFunctionCalled = "clCreateProgramWithSource";
+#endif
     }
 
     if (errcode_ret)
@@ -521,6 +533,7 @@ DEFN(clEnqueueNDRangeKernel)
      cl_uint          num_events_in_wait_list,
      const cl_event * event_wait_list,
      cl_event *       event
+     GVKI_EXTRA_HOSTCODE_ARGS
     )
 {
     DEBUG_MSG("Intercepted clEnqueueNDRangeKernel()");
@@ -586,6 +599,15 @@ DEFN(clEnqueueNDRangeKernel)
                 ki.localWorkSize[dim] = 0;
             }
         }
+
+#ifdef MACRO_LIB
+        // Log information about the location in the hostcode that we were called
+        // the values are extra arguments for the MACRO_LIB build which come from
+        // the expansion of the GVKI_EXTRA_HOSTCODE_ARGS macro.
+        ki.compilationUnit = compilationUnit;
+        ki.lineNumber = lineNumber;
+        ki.hostCodeFunctionCalled = "clEnqueueNDRangeKernel";
+#endif
         
 
         // Log stuff now.

@@ -73,7 +73,9 @@ clCreateProgramWithSource_hook(cl_context        /* context */,
                                cl_uint           /* count */,
                                const char **     /* strings */,
                                const size_t *    /* lengths */,
-                               cl_int *          /* errcode_ret */);
+                               cl_int *          /* errcode_ret */,
+                               const char* compilationUnit,
+                               unsigned int lineNumber);
 
 
 extern cl_int
@@ -113,7 +115,9 @@ clEnqueueNDRangeKernel_hook(cl_command_queue /* command_queue */,
                             const size_t *   /* local_work_size */,
                             cl_uint          /* num_events_in_wait_list */,
                             const cl_event * /* event_wait_list */,
-                            cl_event *       /* event */);
+                            cl_event *       /* event */,
+                            const char* compilationUnit,
+                            unsigned int lineNumber);
 
 
 /* Use macros to rewrite host code to use our hooks.
@@ -124,12 +128,12 @@ clEnqueueNDRangeKernel_hook(cl_command_queue /* command_queue */,
 #define clCreateImage2D clCreateImage2D_hook
 #define clCreateImage3D clCreateImage3D_hook
 #define clCreateSampler clCreateSampler_hook
-#define clCreateProgramWithSource clCreateProgramWithSource_hook
+#define clCreateProgramWithSource(a,b,c,d,e) clCreateProgramWithSource_hook(a,b,c,d,e,__FILE__,__LINE__)
 #define clBuildProgram clBuildProgram_hook
 #define clCreateKernel clCreateKernel_hook
 #define clCreateKernelsInProgram clCreateKernelsInProgram_hook
 #define clSetKernelArg clSetKernelArg_hook
-#define clEnqueueNDRangeKernel clEnqueueNDRangeKernel_hook
+#define clEnqueueNDRangeKernel(a,b,c,d,e,f,g,h,i) clEnqueueNDRangeKernel_hook(a,b,c,d,e,f,g,h,i,__FILE__,__LINE__)
 
 #ifdef CL_VERSION_1_2
 #define clCreateImage clCreateImage_hook
