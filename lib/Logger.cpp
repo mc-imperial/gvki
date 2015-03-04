@@ -268,13 +268,11 @@ void Logger::dump(cl_kernel k)
             (ki.globalWorkSize.size() == ki.localWorkSize.size()) &&
             "dimension mismatch");
 
-    *output << "\"entry_point\": \"" << ki.entryPointName << "\"";
-
     // Emit information about host code API calls used to build the kernel
     // and enqueue it if available
     if (pi.hasHostCodeInfo() || ki.hasHostCodeInfo())
     {
-        *output << "\"host_api_calls\": [";
+        *output << "\"host_api_calls\": [" << endl;
         bool mightNeedComma = false;
 
         if (pi.hasHostCodeInfo())
@@ -291,8 +289,11 @@ void Logger::dump(cl_kernel k)
             printJSONHostCodeInvocationInfo(ki);
         }
 
-        *output << "]" << endl;
+        *output << "]," << endl;
     }
+
+    *output << "\"entry_point\": \"" << ki.entryPointName << "\"";
+
 
     // entry_point might be the last entry is there were no kernel args
     if (ki.arguments.size() == 0)
@@ -316,9 +317,9 @@ void Logger::dump(cl_kernel k)
 void Logger::printJSONHostCodeInvocationInfo(HostAPICallInfo& info)
 {
     assert(info.hasHostCodeInfo() && "no host code info available");
-    *output << "{ \"function_name\" : \"" << info.hostCodeFunctionCalled << "\"," <<
-               "\"compilation_unit\": \"" << info.compilationUnit << "\"," <<
-               "\"line_number\": " << info.lineNumber << "}" << endl;
+    *output << "{" << endl << "\"function_name\": \"" << info.hostCodeFunctionCalled << "\"," << endl <<
+               "\"compilation_unit\": \"" << info.compilationUnit << "\"," << endl <<
+               "\"line_number\": " << info.lineNumber << endl << "}" << endl;
 }
 
 void Logger::printJSONArray(std::vector<size_t>& array)
