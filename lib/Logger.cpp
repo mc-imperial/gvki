@@ -270,6 +270,30 @@ void Logger::dump(cl_kernel k)
 
     *output << "\"entry_point\": \"" << ki.entryPointName << "\"";
 
+    // Emit information about host code API calls used to build the kernel
+    // and enqueue it if available
+    if (pi.hasHostCodeInfo() || ki.hasHostCodeInfo())
+    {
+        *output << "\"host_api_calls\": [";
+        bool mightNeedComma = false;
+
+        if (pi.hasHostCodeInfo())
+        {
+            printJSONHostCodeInvocationInfo(pi);
+            mightNeedComma = true;
+        }
+
+        if (ki.hasHostCodeInfo())
+        {
+            if (mightNeedComma)
+                *output << "," << endl;
+
+            printJSONHostCodeInvocationInfo(ki);
+        }
+
+        *output << "]" << endl;
+    }
+
     // entry_point might be the last entry is there were no kernel args
     if (ki.arguments.size() == 0)
         *output << endl;
@@ -287,6 +311,14 @@ void Logger::dump(cl_kernel k)
 
 
     *output << "}";
+}
+
+void Logger::printJSONHostCodeInvocationInfo(HostAPICallInfo& info)
+{
+    assert(info.hasHostCodeInfo() && "no host code info available");
+    *output << "{ \"function_name\" : \"" << info.hostCodeFunctionCalled << "\"," <<
+               "\"compilation_unit\": \"" << info.compilationUnit << "\"," <<
+               "\"line_number\": " << info.lineNumber << "}" << endl;
 }
 
 void Logger::printJSONArray(std::vector<size_t>& array)
