@@ -34,7 +34,7 @@ static void checkDirectoryExists(const char* dirName) {
 
 #include <C:/prog/msinttypes/inttypes.h>
 #include <Windows.h>
-#define MKDIR_FAILS(d)     (CreateDirectory(ss.str().c_str(), NULL) == 0)
+#define MKDIR_FAILS(d)     (CreateDirectory(d, NULL) == 0)
 #define DIR_ALREADY_EXISTS (GetLastError() == ERROR_ALREADY_EXISTS)
 
 static void checkDirectoryExists(const char* dirName) {
@@ -335,6 +335,34 @@ void Logger::printJSONArray(std::vector<size_t>& array)
     *output << "]";
 }
 
+BufferInfo * Logger::tryGetBuffer(ArgInfo& ai) {
+
+    // Hack:
+    // It's hard to determine what type the argument is.
+    // We can't dereference the void* to check if
+    // it points to cl_mem we previously stored
+    //
+    // In some implementations cl_mem will be a pointer
+    // which poses a risk if a scalar parameter of the same size
+    // as the pointer type.
+
+    if (ai.argSize != sizeof(cl_mem))
+    {
+        return NULL;
+    }
+
+    cl_mem mightBecl_mem = *((cl_mem*)ai.argValue);
+
+    // We might be reading invalid data now
+    if (buffers.count(mightBecl_mem) != 1)
+    {
+        return NULL;
+    }
+
+    // We're going to assume it's cl_mem that we saw before
+    return &buffers[mightBecl_mem];
+}
+
 void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 {
     *output << "{";
@@ -369,46 +397,46 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
     // pointer and finding it's equal zero because it could be a scalar constant
     // (of value 0) or it could be an unintialised array!
 
-    // Hack:
-    // It's hard to determine what type the argument is.
-    // We can't dereference the void* to check if
-    // it points to cl_mem we previously stored
-    //
-    // In some implementations cl_mem will be a pointer
-    // which poses a risk if a scalar parameter of the same size
-    // as the pointer type.
-    if (ai.argSize == sizeof(cl_mem))
+    if (BufferInfo * bi = tryGetBuffer(ai))
     {
-       cl_mem mightBecl_mem = *((cl_mem*) ai.argValue);
+        *output << "\"type\": \"array\", ";
 
-       // We might be reading invalid data now
-       if (buffers.count(mightBecl_mem) == 1)
-       {
-           // We're going to assume it's cl_mem that we saw before
-           *output << "\"type\": \"array\", ";
-           BufferInfo& bi = buffers[mightBecl_mem];
+        *output << "\"size\": " << bi->size << ", ";
 
-           *output << "\"size\": " << bi.size << ", ";
+        *output << "\"flags\": \"";
+        switch (bi->flags)
+        {
+            case CL_MEM_READ_ONLY:
+                *output << "CL_MEM_READ_ONLY";
+                break;
+            case CL_MEM_WRITE_ONLY:
+                *output << "CL_MEM_WRITE_ONLY";
+                break;
+            case CL_MEM_READ_WRITE:
+                *output << "CL_MEM_READ_WRITE";
+                break;
+            default:
+                *output << "UNKNOWN";
+        }
+        *output << "\"";
 
-           *output << "\"flags\": \"";
-           switch (bi.flags) {
-             case CL_MEM_READ_ONLY:
-               *output << "CL_MEM_READ_ONLY";
-               break;
-             case CL_MEM_WRITE_ONLY:
-               *output << "CL_MEM_WRITE_ONLY";
-               break;
-             case CL_MEM_READ_WRITE:
-               *output << "CL_MEM_READ_WRITE";
-               break;
-             default:
-               *output << "UNKNOWN";
-           }
+        if (bi->data != NULL)
+        {
+            *output << ", \"data\": [";
+            for (size_t i = 0; i < bi->size; ++i)
+            {
+                if (i > 0)
+                {
+                    *output << ",";
+                }
+                *output << static_cast<unsigned>(((unsigned char*)bi->data)[i]);
+            }
+            *output << "]";
+        }
 
-           *output << "\"}";
+        *output << "}";
 
-           return;
-       }
+        return;
 
     }
 

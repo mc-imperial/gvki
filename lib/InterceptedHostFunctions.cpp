@@ -41,7 +41,6 @@ DEFN(clCreateBuffer)
 
         BufferInfo bi;
         bi.size = size;
-        bi.data = host_ptr;
         bi.flags = flags;
         l.buffers[buffer] = bi;
     }
@@ -525,6 +524,46 @@ DEFN(clEnqueueNDRangeKernel)
 {
     DEBUG_MSG("Intercepted clEnqueueNDRangeKernel()");
 
+
+    Logger& l = Logger::Singleton();
+    assert(l.kernels.count(kernel) == 1 && "kernel was not logged");
+    KernelInfo& ki = l.kernels[kernel];
+    for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
+    {
+        if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
+        {
+            if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+            {
+                assert(bi->data == NULL && "Data field of buffer should not be set between kernel invocations");
+                bi->data = new char[bi->size];
+
+                cl_mem memObject;
+                bool found = false;
+                for (std::map<cl_mem, BufferInfo>::iterator it = l.buffers.begin(), end = l.buffers.end();
+                  it != end;
+                  ++it)
+                {
+                    if (&(it->second) == bi) {
+                        found = true;
+                        memObject = it->first;
+                        break;
+                    }
+                }
+                assert(found && "Memory object corresponding to buffer must exist");
+
+                clEnqueueReadBuffer(command_queue,
+                                    memObject,
+                                    CL_TRUE,
+                                    0,
+                                    bi->size,
+                                    bi->data,
+                                    0,
+                                    NULL,
+                                    NULL);
+            }
+        }
+    }
+
     cl_int success = UnderlyingCaller::Singleton().clEnqueueNDRangeKernelU(command_queue,
                                                                            kernel,
                                                                            work_dim,
@@ -537,12 +576,6 @@ DEFN(clEnqueueNDRangeKernel)
 
     if (success == CL_SUCCESS)
     {
-        // TODO: Log
-        Logger& l = Logger::Singleton();
-
-        assert(l.kernels.count(kernel) == 1 && "kernel was not logged");
-        KernelInfo& ki = l.kernels[kernel];
-
         ki.dimensions = work_dim;
 
         // Assume the local size is concrete
@@ -592,6 +625,20 @@ DEFN(clEnqueueNDRangeKernel)
         // We need to do this now because the kernel information
         // might be modified later.
         l.dump(kernel);
+
+        for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
+        {
+          if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
+          {
+            if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+            {
+              assert(bi->data != NULL && "Data field of buffer should not be null after kernel invocation");
+              delete bi->data;
+              bi->data = NULL;
+            }
+          }
+        }
+
     }
     
     return success;

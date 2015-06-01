@@ -92,6 +92,7 @@ class Logger
         Logger();
         ~Logger();
         void dump(cl_kernel k);
+        BufferInfo * tryGetBuffer(ArgInfo &ai);
 
         static Logger& Singleton();
     private:
