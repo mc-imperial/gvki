@@ -32,7 +32,7 @@ static void checkDirectoryExists(const char* dirName) {
 
 #else
 
-#include <inttypes.h>
+#include <C:/prog/msinttypes/inttypes.h>
 #include <Windows.h>
 #define MKDIR_FAILS(d)     (CreateDirectory(ss.str().c_str(), NULL) == 0)
 #define DIR_ALREADY_EXISTS (GetLastError() == ERROR_ALREADY_EXISTS)
@@ -308,10 +308,28 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
        if (buffers.count(mightBecl_mem) == 1)
        {
            // We're going to assume it's cl_mem that we saw before
-           *output << "\"type\": \"array\",";
+           *output << "\"type\": \"array\", ";
            BufferInfo& bi = buffers[mightBecl_mem];
 
-           *output << "\"size\": " << bi.size << "}";
+           *output << "\"size\": " << bi.size << ", ";
+
+           *output << "\"flags\": \"";
+           switch (bi.flags) {
+             case CL_MEM_READ_ONLY:
+               *output << "CL_MEM_READ_ONLY";
+               break;
+             case CL_MEM_WRITE_ONLY:
+               *output << "CL_MEM_WRITE_ONLY";
+               break;
+             case CL_MEM_READ_WRITE:
+               *output << "CL_MEM_READ_WRITE";
+               break;
+             default:
+               *output << "UNKNOWN";
+           }
+
+           *output << "\"}";
+
            return;
        }
 
