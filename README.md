@@ -22,12 +22,25 @@ $ DYLD_FORCE_FLAT_NAMESPACE=1 DYLD_INSERT_LIBRARIES=/path/to/gvki/lib/libGVKI_pr
 
 * "Macro library". For systems that do not support pre loadable libraries we also
   provide a header file that can be included in your application to rewrite all
-  relevant calls to functions in our interceptor library
+  relevant calls to OpenCL host functions to calls into our interceptor library
   (``lib/libGVKI_macro.a``) which you then must link with afterwards.
 
+Add ``#include "gvki_macro_header.h"`` into your source files
+just after your include of the OpenCL header e.g.
+
 ```
-# Add #include "gvki_macro_header.h" into your source files
-# Compile your application linking the interceptor library
+#include <CL/OpenCL.h>
+#include "gvki/gvki_macro_header.h"
+
+int main(int argc, char** argv)
+{
+...
+}
+```
+
+Then compile your application linking the interceptor library
+
+```
 $ gcc -I/path/to/gvki_src/include/ your_application.c lib/libGVKI_macro.a -o your_application
 ```
 
@@ -53,6 +66,9 @@ $ cd build
 $ cmake -DENABLE_TESTING:BOOL=ON ../src/
 $ make
 ```
+
+Note if you don't have a working OpenCL implementation on your system set
+``ENABLE_TESTING`` to ``OFF``.
 
 Windows
 -------
@@ -85,7 +101,12 @@ Output produced
 ===============
 
 When intercepting a ``gvki-<N>`` directory is created where ``<N>``
-is the next available integer. The directory contains the following
+is the next available integer. The location of this directories can
+be controlled using ``GVKI_ROOT``. If ``GVKI_NO_NUM_DIRS`` si specified
+then numbered directories are not created and instead everything is logged
+into ``GVKI_ROOT`` which must not already exist.
+
+The directory contains the following
 
 * ``log.json`` file should which contains information about logged
   executions.
@@ -110,3 +131,4 @@ Setting various environment variables changes its behaviour
 * ``GVKI_ROOT`` is the directory that ``gvki-*`` directories are created in. If not set the current working
   directory is used.
 * ``GVKI_LOG_FILE`` Setting this to a valid file path will cause logging messages to be written to a file in addition to the normal stderr output.
+* ``GVKI_NO_NUM_DIRS`` Setting this causes ``GVKI_ROOT`` to be used as the directory for logging files instead of using ``gvki-*``.

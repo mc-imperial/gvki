@@ -31,7 +31,22 @@ struct SamplerInfo
     cl_filter_mode filter_mode;
 };
 
-struct ProgramInfo
+// Information about where in the host code the "something" was created
+struct HostAPICallInfo
+{
+    const char* compilationUnit;
+    unsigned int lineNumber;
+    const char* hostCodeFunctionCalled;
+
+    HostAPICallInfo() : compilationUnit(0), lineNumber(0), hostCodeFunctionCalled(0) { }
+
+    bool hasHostCodeInfo() const
+    {
+        return compilationUnit != 0 && hostCodeFunctionCalled !=0 && lineNumber > 0;
+    }
+};
+
+struct ProgramInfo : public HostAPICallInfo
 {
     std::vector<std::string> sources;
     std::string compileFlags;
@@ -44,7 +59,7 @@ struct ArgInfo
     ArgInfo() : argValue(0), argSize(0) { }
 };
 
-struct KernelInfo
+struct KernelInfo : public HostAPICallInfo
 {
     cl_program program;
     std::string entryPointName;
@@ -53,6 +68,7 @@ struct KernelInfo
     std::vector<size_t> globalWorkOffset;
     std::vector<size_t> globalWorkSize;
     std::vector<size_t> localWorkSize;
+    bool localWorkSizeIsUnconstrained;
 };
 
 struct ProgramInfoCacheCompare
@@ -82,9 +98,12 @@ class Logger
         // FIXME: Use std::unique_ptr<> instead
         std::ofstream* output;
         Logger(const Logger& that); /* = delete; */
+        void initDirectoryNumbered();
+        void initDirectoryManual(const char* rootDir);
 
         void printJSONArray(std::vector<size_t>& array);
         void printJSONKernelArgumentInfo(ArgInfo& ai);
+        void printJSONHostCodeInvocationInfo(HostAPICallInfo& info);
         std::string dumpKernelSource(KernelInfo& ki);
 
         ProgCacheMapTy WrittenKernelFileCache;

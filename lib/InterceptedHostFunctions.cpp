@@ -319,12 +319,12 @@ DEFN(clBuildProgram)
 void static gvkiSetupKernelArguments(cl_kernel kernel, KernelInfo& ki)
 {
     cl_uint numberOfArgs = 0;
-    cl_int success = clGetKernelInfo(kernel,
-                                     CL_KERNEL_NUM_ARGS,
-                                     sizeof(cl_uint),
-                                     &numberOfArgs,
-                                     NULL
-                                    );
+    cl_int success = UnderlyingCaller::Singleton().clGetKernelInfoU(kernel,
+                                                                    CL_KERNEL_NUM_ARGS,
+                                                                    sizeof(cl_uint),
+                                                                    &numberOfArgs,
+                                                                    NULL
+                                                                   );
 
     if (success != CL_SUCCESS)
     {
@@ -333,7 +333,6 @@ void static gvkiSetupKernelArguments(cl_kernel kernel, KernelInfo& ki)
     }
 
     assert(ki.arguments.size() == 0 && "arguments should not have been initialised already");
-    assert(numberOfArgs > 0 && "numberOfArgs should be greater than zero");
 
     // Set the size of the arguments vector. This never change
     for (cl_uint index=0; index < numberOfArgs; ++index)
@@ -405,12 +404,12 @@ DEFN(clCreateKernelsInProgram)
 
             // Get the entry point name
             size_t stringSize = 0;
-            cl_int genSuccess = clGetKernelInfo(k,
-                                                CL_KERNEL_FUNCTION_NAME,
-                                                0,
-                                                NULL,
-                                                &stringSize
-                                               );
+            cl_int genSuccess = UnderlyingCaller::Singleton().clGetKernelInfoU(k,
+                                                                               CL_KERNEL_FUNCTION_NAME,
+                                                                               0,
+                                                                               NULL,
+                                                                               &stringSize
+                                                                              );
             if (genSuccess != CL_SUCCESS)
             {
                 ERROR_MSG("Failed to get size of kernel name");
@@ -426,12 +425,12 @@ DEFN(clCreateKernelsInProgram)
                 exit(1);
             }
 
-            genSuccess = clGetKernelInfo(k,
-                                         CL_KERNEL_FUNCTION_NAME,
-                                         stringSize,
-                                         kernelName,
-                                         NULL
-                                        );
+            genSuccess = UnderlyingCaller::Singleton().clGetKernelInfoU(k,
+                                                                        CL_KERNEL_FUNCTION_NAME,
+                                                                        stringSize,
+                                                                        kernelName,
+                                                                        NULL
+                                                                       );
 
             if (genSuccess != CL_SUCCESS)
             {
@@ -471,6 +470,7 @@ DEFN(clSetKernelArg)
         assert (l.kernels.count(kernel) == 1 && "Kernel was not logged");
         KernelInfo& ki = l.kernels[kernel];
 
+        assert( ki.arguments.size() > 0 && "Can't set argument on kernel that does not take any arguments");
         assert(arg_index <= ( ki.arguments.size() -1) && "Invalid argument index for kernel");
         ArgInfo& ai = ki.arguments[arg_index];
 
@@ -545,6 +545,9 @@ DEFN(clEnqueueNDRangeKernel)
 
         ki.dimensions = work_dim;
 
+        // Assume the local size is concrete
+        ki.localWorkSizeIsUnconstrained = false;
+
         // Resize recorded NDRange vectors if necessary
         if (ki.globalWorkOffset.size() != work_dim)
             ki.globalWorkOffset.resize(work_dim);
@@ -575,9 +578,12 @@ DEFN(clEnqueueNDRangeKernel)
             else
             {
                 // It is implementation defined how to divide the NDRange
-                // in this case. We will make the same size as the global_work_size
-                // so that there is a single work group.
-                ki.localWorkSize[dim] = global_work_size[dim];
+                // in this case. We will emit that the local size is unconstrained
+                ki.localWorkSizeIsUnconstrained = true;
+
+                // Set the values to something, it doesn't really matter what
+                // because we shouldn't write them
+                ki.localWorkSize[dim] = 0;
             }
         }
         

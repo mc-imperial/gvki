@@ -118,6 +118,13 @@ class UnderlyingCaller
                                                              );
         clEnqueueNDRangeKernelTy clEnqueueNDRangeKernelU;
 
+typedef cl_int (CL_CALLBACK *clGetKernelInfoTy)(cl_kernel,
+                                                cl_kernel_info,
+                                                size_t,
+                                                void *,
+                                                size_t *);
+        clGetKernelInfoTy clGetKernelInfoU;
+
         UnderlyingCaller();
 
         static UnderlyingCaller& Singleton();

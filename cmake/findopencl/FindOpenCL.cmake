@@ -86,7 +86,9 @@ endif()
 
 # Quick sanity check
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CL_HEADER_PATH "${OPENCL_INCLUDE_DIRS}/OpenCL/cl.h")
+    # FIXME: This is fragile. Perhaps we shouldn't do the sanity
+    #        check at all on OSX?
+    set(CL_HEADER_PATH "${OPENCL_INCLUDE_DIRS}/Headers/cl.h")
 else()
     set(CL_HEADER_PATH "${OPENCL_INCLUDE_DIRS}/CL/cl.h")
 endif()

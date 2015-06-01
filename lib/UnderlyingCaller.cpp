@@ -74,6 +74,7 @@ UnderlyingCaller::UnderlyingCaller()
     SET_FCN_PTR(clCreateKernelsInProgram)
     SET_FCN_PTR(clSetKernelArg)
     SET_FCN_PTR(clEnqueueNDRangeKernel)
+    SET_FCN_PTR(clGetKernelInfo)
 };
 
 UnderlyingCaller& UnderlyingCaller::Singleton()

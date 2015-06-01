@@ -1,0 +1,1 @@
+GVKI_TEST(HelloWorldUnconstrainedLocalSize.cpp HelloWorld.cl)

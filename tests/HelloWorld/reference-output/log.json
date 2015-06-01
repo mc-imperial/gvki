@@ -2,10 +2,11 @@
 {
 "language": "OpenCL",
 "kernel_file": "hello_kernel.0.cl",
-"global_size": [ 1000],
-"local_size": [ 1],
+"global_size": [1000],
+"local_size": [1],
+"compiler_flags": "",
 "entry_point": "hello_kernel",
-"kernel_arguments": [ 
+"kernel_arguments": [
 {"type": "array","size": 4000},
 {"type": "array","size": 4000},
 {"type": "array","size": 4000}

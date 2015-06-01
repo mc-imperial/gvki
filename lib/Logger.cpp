@@ -62,11 +62,48 @@ Logger& Logger::Singleton()
 
 Logger::Logger()
 {
+    // FIXME: Reading from the environment probably doesn't belong in here
+    // but it makes implementing the singleton a lot easier
+    const char* doNotUseNumberedDirs = getenv("GVKI_NO_NUM_DIRS");
+    if (doNotUseNumberedDirs)
+    {
+        DEBUG_MSG("Using manual directory");
+        const char* rootDir = getenv("GVKI_ROOT");
+        if (!rootDir)
+        {
+            ERROR_MSG("If using GVKI_NO_NUM_DIRS then GVKI_ROOT must be specified");
+            _exit(1);
+        }
+        initDirectoryManual(rootDir);
+    }
+    else
+    {
+        DEBUG_MSG("Using numbered directory");
+        initDirectoryNumbered();
+    }
+    checkDirectoryExists(this->directory.c_str());
+    DEBUG_MSG("Directory used for logging is \"" << this->directory << "\"");
+
+    openLog();
+}
+
+void Logger::initDirectoryManual(const char* rootDir)
+{
+    assert(rootDir && "rootDir cannot be NULL");
+
+    if (MKDIR_FAILS(rootDir))
+    {
+        ERROR_MSG("Failed to create directory \"" << rootDir << ": " << strerror(errno));
+        _exit(1);
+    }
+    this->directory = std::string(rootDir);
+}
+
+void Logger::initDirectoryNumbered()
+{
     int count = 0;
     bool success= false;
 
-    // FIXME: Reading from the environment probably doesn't belong in here
-    // but it makes implementing the singleton a lot easier
     std::string directoryPrefix;
 
     const char* envTemp = getenv("GVKI_ROOT");
@@ -138,9 +175,6 @@ Logger::Logger()
         exit(1);
     }
 
-    DEBUG_MSG("Directory used for logging is \"" << this->directory << "\"");
-
-    openLog();
 }
 
 
@@ -163,6 +197,7 @@ void Logger::openLog()
 
 void Logger::closeLog()
 {
+    assert(output != NULL && "output must not be NULL");
     // End of JSON array
     *output << std::endl << "]" << std::endl;
     output->close();
@@ -179,6 +214,8 @@ void Logger::dump(cl_kernel k)
     // Output JSON format defined by
     // http://multicore.doc.ic.ac.uk/tools/GPUVerify/docs/json_format.html
     KernelInfo& ki = kernels[k];
+    assert( programs.count(ki.program) == 1 && "cl_program missing");
+    ProgramInfo& pi = programs[ki.program];
 
     static bool isFirst = true;
 
@@ -216,22 +253,54 @@ void Logger::dump(cl_kernel k)
     printJSONArray(ki.globalWorkSize);
     *output << "," << endl;
 
-    *output << "\"local_size\": ";
-    printJSONArray(ki.localWorkSize);
-    *output << "," << endl;
+    // Note if local_size is unconstrained
+    // we just don't emit the ``local_size`` key or its value.
+    if (!ki.localWorkSizeIsUnconstrained)
+    {
+        *output << "\"local_size\": ";
+        printJSONArray(ki.localWorkSize);
+        *output << "," << endl;
+    }
+
+    *output << "\"compiler_flags\": \"" << pi.compileFlags << "\"," << endl;
 
     assert( (ki.globalWorkOffset.size() == ki.globalWorkSize.size()) &&
             (ki.globalWorkSize.size() == ki.localWorkSize.size()) &&
             "dimension mismatch");
 
+    // Emit information about host code API calls used to build the kernel
+    // and enqueue it if available
+    if (pi.hasHostCodeInfo() || ki.hasHostCodeInfo())
+    {
+        *output << "\"host_api_calls\": [" << endl;
+        bool mightNeedComma = false;
+
+        if (pi.hasHostCodeInfo())
+        {
+            printJSONHostCodeInvocationInfo(pi);
+            mightNeedComma = true;
+        }
+
+        if (ki.hasHostCodeInfo())
+        {
+            if (mightNeedComma)
+                *output << "," << endl;
+
+            printJSONHostCodeInvocationInfo(ki);
+        }
+
+        *output << "]," << endl;
+    }
+
     *output << "\"entry_point\": \"" << ki.entryPointName << "\"";
+
 
     // entry_point might be the last entry is there were no kernel args
     if (ki.arguments.size() == 0)
         *output << endl;
     else
     {
-        *output << "," << endl << "\"kernel_arguments\": [ " << endl;
+        *output << "," << endl << "\"kernel_arguments\": [" << endl;
         for (unsigned argIndex=0; argIndex < ki.arguments.size() ; ++argIndex)
         {
             printJSONKernelArgumentInfo(ki.arguments[argIndex]);
@@ -245,9 +314,17 @@ void Logger::dump(cl_kernel k)
     *output << "}";
 }
 
+void Logger::printJSONHostCodeInvocationInfo(HostAPICallInfo& info)
+{
+    assert(info.hasHostCodeInfo() && "no host code info available");
+    *output << "{" << endl << "\"function_name\": \"" << info.hostCodeFunctionCalled << "\"," << endl <<
+               "\"compilation_unit\": \"" << info.compilationUnit << "\"," << endl <<
+               "\"line_number\": " << info.lineNumber << endl << "}" << endl;
+}
+
 void Logger::printJSONArray(std::vector<size_t>& array)
 {
-    *output << "[ ";
+    *output << "[";
     for (unsigned index=0; index < array.size(); ++index)
     {
         *output << array[index];
@@ -426,7 +503,8 @@ std::string Logger::dumpKernelSource(KernelInfo& ki)
         std::string withDir = (directory + PATH_SEP) + ss.str();
         if (!file_exists(withDir))
         {
-           kos = new std::ofstream(withDir.c_str());
+           // Use Binary mode to try avoid line ending issues on Windows
+           kos = new std::ofstream(withDir.c_str(), std::ofstream::binary);
 
            if (!kos->good())
            {

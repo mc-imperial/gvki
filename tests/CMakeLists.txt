@@ -91,5 +91,6 @@ add_custom_target(check
 add_subdirectory(HelloWorld)
 add_subdirectory(HelloWorldGlobalOffset)
 add_subdirectory(HelloWorldMultipleInvocations)
+add_subdirectory(HelloWorldUnconstrainedLocalSize)
 add_subdirectory(SimplePrefixSum)
 add_subdirectory(CreateKernelsInProgram)
