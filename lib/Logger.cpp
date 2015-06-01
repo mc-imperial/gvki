@@ -200,7 +200,7 @@ void Logger::dump(cl_kernel k)
     // FIXME: Document this json attribute!
     // Only emit global_offset if its non zero
     bool hasNonZeroGlobalOffset = false;
-    for (int index=0; index < ki.globalWorkOffset.size() ; ++index)
+    for (unsigned index=0; index < ki.globalWorkOffset.size() ; ++index)
     {
         if (ki.globalWorkOffset[index] != 0)
             hasNonZeroGlobalOffset = true;
@@ -232,7 +232,7 @@ void Logger::dump(cl_kernel k)
     else
     {
         *output << "," << endl << "\"kernel_arguments\": [ " << endl;
-        for (int argIndex=0; argIndex < ki.arguments.size() ; ++argIndex)
+        for (unsigned argIndex=0; argIndex < ki.arguments.size() ; ++argIndex)
         {
             printJSONKernelArgumentInfo(ki.arguments[argIndex]);
             if (argIndex != (ki.arguments.size() -1))
@@ -248,7 +248,7 @@ void Logger::dump(cl_kernel k)
 void Logger::printJSONArray(std::vector<size_t>& array)
 {
     *output << "[ ";
-    for (int index=0; index < array.size(); ++index)
+    for (unsigned index=0; index < array.size(); ++index)
     {
         *output << array[index];
 
