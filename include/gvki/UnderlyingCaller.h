@@ -118,12 +118,24 @@ class UnderlyingCaller
                                                              );
         clEnqueueNDRangeKernelTy clEnqueueNDRangeKernelU;
 
-typedef cl_int (CL_CALLBACK *clGetKernelInfoTy)(cl_kernel,
+        typedef cl_int (CL_CALLBACK *clGetKernelInfoTy)(cl_kernel,
                                                 cl_kernel_info,
                                                 size_t,
                                                 void *,
                                                 size_t *);
         clGetKernelInfoTy clGetKernelInfoU;
+
+        typedef cl_int (CL_CALLBACK *clEnqueueReadBufferTy)(cl_command_queue,
+          cl_mem,
+          cl_bool,
+          size_t,
+          size_t,
+          void *,
+          cl_uint,
+          const cl_event *,
+          cl_event *);
+
+        clEnqueueReadBufferTy clEnqueueReadBufferU;
 
         UnderlyingCaller();
 

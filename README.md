@@ -73,18 +73,22 @@ Note if you don't have a working OpenCL implementation on your system set
 Windows
 -------
 
-1. Clone this repository
-2. Now run ``cmake-gui`` and set the source directory to the git repository and
+1. Download msinttypes and put it somewhere on your machine:
+   https://code.google.com/p/msinttypes/
+2. Clone the gvki repository
+3. Now run ``cmake-gui`` and set the source directory to the git repository and
    the build directory to anywhere you want (preferrably not the git repository)
-3. Click the Configure button and select the generator you want to use (e.g.
+4. Set MSINTTYPES_DIR to be the directory of your msinttypes download that
+   contains inttypes.h.
+5. Click the Configure button and select the generator you want to use (e.g.
    ``Visual Studio 12 2013``)
-4. CMake will try to configure. It is likely that CMake will not be able to
+6. CMake will try to configure. It is likely that CMake will not be able to
    find the OpenCL header files and libraries. If it does not you should
    manually set ``OPENCL_INCLUDE_DIRS`` (required) and ``OPENCL_LIBRARIES``
    (only needed if you want to do testing) in the ``cmake-gui`` interface. Once
    you've done that press the configure button again until it succeeds.
-5. Press the Generate button.
-6. You can now build the project using the system relevant to the generator
+7. Press the Generate button.
+8. You can now build the project using the system relevant to the generator
    you chose. If you chose Visual Studio there will be a ``.sln`` file in the
    build directory you can open.
 

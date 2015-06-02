@@ -551,7 +551,8 @@ DEFN(clEnqueueNDRangeKernel)
                 }
                 assert(found && "Memory object corresponding to buffer must exist");
 
-                clEnqueueReadBuffer(command_queue,
+                cl_int success = UnderlyingCaller::Singleton().clEnqueueReadBufferU(
+                                    command_queue,
                                     memObject,
                                     CL_TRUE,
                                     0,
@@ -560,6 +561,7 @@ DEFN(clEnqueueNDRangeKernel)
                                     0,
                                     NULL,
                                     NULL);
+                // TODO: what should we do when API calls made for purposes of interception fail?
             }
         }
     }

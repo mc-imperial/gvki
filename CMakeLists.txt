@@ -56,6 +56,10 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_BINARY_DIR}/include)
 
+if (WIN32)
+    include_directories(${MSINTTYPES_DIR})
+endif ()
+
 add_subdirectory(include)
 add_subdirectory(lib)
 

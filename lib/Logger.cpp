@@ -32,7 +32,7 @@ static void checkDirectoryExists(const char* dirName) {
 
 #else
 
-#include <C:/prog/msinttypes/inttypes.h>
+#include <inttypes.h>
 #include <Windows.h>
 #define MKDIR_FAILS(d)     (CreateDirectory(d, NULL) == 0)
 #define DIR_ALREADY_EXISTS (GetLastError() == ERROR_ALREADY_EXISTS)
