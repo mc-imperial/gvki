@@ -62,6 +62,8 @@ Logger& Logger::Singleton()
 
 Logger::Logger()
 {
+    arrayDataCounter = 0;
+
     // FIXME: Reading from the environment probably doesn't belong in here
     // but it makes implementing the singleton a lot easier
     const char* doNotUseNumberedDirs = getenv("GVKI_NO_NUM_DIRS");
@@ -422,16 +424,23 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 
         if (bi->data != NULL)
         {
-            *output << ", \"data\": [";
-            for (size_t i = 0; i < bi->size; ++i)
+            std::stringstream dataFileName;
+            dataFileName << "array_data_" << arrayDataCounter << ".bin";
+            arrayDataCounter++;
+            *output << ", \"data\": \"" << dataFileName.str() << "\"";
+
+            std::string withDir = (directory + PATH_SEP) + dataFileName.str();
+            std::ofstream dataOutputStream;
+            dataOutputStream.open(withDir.c_str(), std::ios::out | std::ios::binary);
+            if (dataOutputStream.good())
             {
-                if (i > 0)
-                {
-                    *output << ",";
-                }
-                *output << static_cast<unsigned>(((unsigned char*)bi->data)[i]);
+                dataOutputStream.write((const char*)(bi->data), bi->size);
             }
-            *output << "]";
+            else
+            {
+                // TODO: work out best course of action for handling exception here
+            }
+            dataOutputStream.close();
         }
 
         *output << "}";

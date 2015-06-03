@@ -98,6 +98,7 @@ class Logger
     private:
         // FIXME: Use std::unique_ptr<> instead
         std::ofstream* output;
+        unsigned arrayDataCounter;
         Logger(const Logger& that); /* = delete; */
         void initDirectoryNumbered();
         void initDirectoryManual(const char* rootDir);
