@@ -20,6 +20,10 @@
 using namespace std;
 using namespace gvki;
 
+// If this is set to false, a given kernel object will support
+// just one invocation.
+#define __ALLOW_MULTIPLE_LOGGING false
+
 extern "C" {
 
 cl_mem
@@ -364,6 +368,7 @@ DEFN(clCreateKernel)
         ki.program = program;
         ki.entryPointName = std::string(kernel_name);
         gvkiSetupKernelArguments(kernel, ki);
+        ki.loggedAlready = false;
 
         DEBUG_MSG("Kernel \"" << ki.entryPointName << "\" created");
     }
@@ -528,122 +533,126 @@ DEFN(clEnqueueNDRangeKernel)
     Logger& l = Logger::Singleton();
     assert(l.kernels.count(kernel) == 1 && "kernel was not logged");
     KernelInfo& ki = l.kernels[kernel];
-    for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
+    if (__ALLOW_MULTIPLE_LOGGING || !ki.loggedAlready)
     {
-        if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
+        for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
         {
-            if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+            if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
             {
-                assert(bi->data == NULL && "Data field of buffer should not be set between kernel invocations");
-                bi->data = new char[bi->size];
-
-                cl_mem memObject;
-                bool found = false;
-                for (std::map<cl_mem, BufferInfo>::iterator it = l.buffers.begin(), end = l.buffers.end();
-                  it != end;
-                  ++it)
+                if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
                 {
-                    if (&(it->second) == bi) {
-                        found = true;
-                        memObject = it->first;
-                        break;
-                    }
-                }
-                assert(found && "Memory object corresponding to buffer must exist");
+                    assert(bi->data == NULL && "Data field of buffer should not be set between kernel invocations");
+                    bi->data = new char[bi->size];
 
-                cl_int success = UnderlyingCaller::Singleton().clEnqueueReadBufferU(
-                                    command_queue,
-                                    memObject,
-                                    CL_TRUE,
-                                    0,
-                                    bi->size,
-                                    bi->data,
-                                    0,
-                                    NULL,
-                                    NULL);
-                // TODO: what should we do when API calls made for purposes of interception fail?
+                    cl_mem memObject;
+                    bool found = false;
+                    for (std::map<cl_mem, BufferInfo>::iterator it = l.buffers.begin(), end = l.buffers.end();
+                      it != end;
+                      ++it)
+                    {
+                        if (&(it->second) == bi) {
+                            found = true;
+                            memObject = it->first;
+                            break;
+                        }
+                    }
+                    assert(found && "Memory object corresponding to buffer must exist");
+
+                    cl_int success = UnderlyingCaller::Singleton().clEnqueueReadBufferU(
+                                        command_queue,
+                                        memObject,
+                                        CL_TRUE,
+                                        0,
+                                        bi->size,
+                                        bi->data,
+                                        0,
+                                        NULL,
+                                        NULL);
+                    // TODO: what should we do when API calls made for purposes of interception fail?
+                }
             }
         }
-    }
 
-    cl_int success = UnderlyingCaller::Singleton().clEnqueueNDRangeKernelU(command_queue,
-                                                                           kernel,
-                                                                           work_dim,
-                                                                           global_work_offset,
-                                                                           global_work_size,
-                                                                           local_work_size,
-                                                                           num_events_in_wait_list,
-                                                                           event_wait_list,
-                                                                           event);
+        {
+          ki.dimensions = work_dim;
 
-    if (success == CL_SUCCESS)
-    {
-        ki.dimensions = work_dim;
+          // Assume the local size is concrete
+          ki.localWorkSizeIsUnconstrained = false;
 
-        // Assume the local size is concrete
-        ki.localWorkSizeIsUnconstrained = false;
-
-        // Resize recorded NDRange vectors if necessary
-        if (ki.globalWorkOffset.size() != work_dim)
+          // Resize recorded NDRange vectors if necessary
+          if (ki.globalWorkOffset.size() != work_dim)
             ki.globalWorkOffset.resize(work_dim);
 
-        if (ki.globalWorkSize.size() != work_dim)
+          if (ki.globalWorkSize.size() != work_dim)
             ki.globalWorkSize.resize(work_dim);
 
-        if (ki.localWorkSize.size() != work_dim)
+          if (ki.localWorkSize.size() != work_dim)
             ki.localWorkSize.resize(work_dim);
 
-        for (int dim=0; dim < work_dim; ++dim)
-        {
+          for (int dim = 0; dim < work_dim; ++dim)
+          {
             if (global_work_offset != NULL)
             {
-                ki.globalWorkOffset[dim] = global_work_offset[dim];
+              ki.globalWorkOffset[dim] = global_work_offset[dim];
             }
             else
             {
-                ki.globalWorkOffset[dim] = 0;
+              ki.globalWorkOffset[dim] = 0;
             }
 
             ki.globalWorkSize[dim] = global_work_size[dim];
 
             if (local_work_size != NULL)
             {
-                ki.localWorkSize[dim] = local_work_size[dim];
+              ki.localWorkSize[dim] = local_work_size[dim];
             }
             else
             {
-                // It is implementation defined how to divide the NDRange
-                // in this case. We will emit that the local size is unconstrained
-                ki.localWorkSizeIsUnconstrained = true;
+              // It is implementation defined how to divide the NDRange
+              // in this case. We will emit that the local size is unconstrained
+              ki.localWorkSizeIsUnconstrained = true;
 
-                // Set the values to something, it doesn't really matter what
-                // because we shouldn't write them
-                ki.localWorkSize[dim] = 0;
-            }
-        }
-        
-
-        // Log stuff now.
-        // We need to do this now because the kernel information
-        // might be modified later.
-        l.dump(kernel);
-
-        for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
-        {
-          if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
-          {
-            if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
-            {
-              assert(bi->data != NULL && "Data field of buffer should not be null after kernel invocation");
-              delete bi->data;
-              bi->data = NULL;
+              // Set the values to something, it doesn't really matter what
+              // because we shouldn't write them
+              ki.localWorkSize[dim] = 0;
             }
           }
-        }
 
+
+          // Log stuff now.
+          // We need to do this now because the kernel information
+          // might be modified later.
+          l.dump(kernel);
+
+          for (unsigned argIndex = 0; argIndex < ki.arguments.size(); ++argIndex)
+          {
+            if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
+            {
+              if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+              {
+                assert(bi->data != NULL && "Data field of buffer should not be null after kernel invocation");
+                delete bi->data;
+                bi->data = NULL;
+              }
+            }
+          }
+
+        }
     }
+
+    ki.loggedAlready = true;
+
+    return UnderlyingCaller::Singleton().clEnqueueNDRangeKernelU(command_queue,
+                                                                 kernel,
+                                                                 work_dim,
+                                                                 global_work_offset,
+                                                                 global_work_size,
+                                                                 local_work_size,
+                                                                 num_events_in_wait_list,
+                                                                 event_wait_list,
+                                                                 event);
+
     
-    return success;
 }
 
 }

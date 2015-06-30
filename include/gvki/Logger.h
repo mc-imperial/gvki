@@ -69,6 +69,7 @@ struct KernelInfo : public HostAPICallInfo
     std::vector<size_t> globalWorkSize;
     std::vector<size_t> localWorkSize;
     bool localWorkSizeIsUnconstrained;
+    bool loggedAlready;
 };
 
 struct ProgramInfoCacheCompare
