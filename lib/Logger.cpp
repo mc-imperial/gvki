@@ -406,21 +406,42 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
         *output << "\"size\": " << bi->size << ", ";
 
         *output << "\"flags\": \"";
-        switch (bi->flags)
+
+        
+        if (
+            !(bi->flags & CL_MEM_READ_ONLY) &&
+            !(bi->flags & CL_MEM_WRITE_ONLY) &&
+            (bi->flags & CL_MEM_READ_WRITE)
+        )
         {
-            case CL_MEM_READ_ONLY:
-                *output << "CL_MEM_READ_ONLY";
-                break;
-            case CL_MEM_WRITE_ONLY:
-                *output << "CL_MEM_WRITE_ONLY";
-                break;
-            case CL_MEM_READ_WRITE:
                 *output << "CL_MEM_READ_WRITE";
-                break;
-            default:
+        } else if (
+            (bi->flags & CL_MEM_READ_ONLY) &&
+            !(bi->flags & CL_MEM_WRITE_ONLY)
+        )
+        {
+                *output << "CL_MEM_READ_ONLY";
+        } else if (
+            !(bi->flags & CL_MEM_READ_ONLY) &&
+            (bi->flags & CL_MEM_WRITE_ONLY)
+        )
+        {
+                *output << "CL_MEM_WRITE_ONLY";
+        }
+        else if (
+            (bi->flags & CL_MEM_READ_ONLY) &&
+            (bi->flags & CL_MEM_WRITE_ONLY)
+            )
+        {
+                *output << "UNKNOWN";
+        } else
+        {
                 *output << "UNKNOWN";
         }
         *output << "\"";
+        
+        
+        
 
         if (bi->data != NULL)
         {
