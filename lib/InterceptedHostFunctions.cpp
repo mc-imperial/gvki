@@ -120,7 +120,7 @@ DEFN(clCreateImage3D)
      void *                  host_ptr,
      cl_int *                errcode_ret)
 {
-    DEBUG_MSG("Intercepted clCreate2DImage()");
+    DEBUG_MSG("Intercepted clCreateImage3D()");
 
     cl_int success = CL_SUCCESS;
     cl_mem img = UnderlyingCaller::Singleton().clCreateImage3DU(context,
