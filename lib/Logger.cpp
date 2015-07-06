@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <stdint.h>
 #include "string.h"
 #include "gvki/Debug.h"
 
@@ -211,6 +212,13 @@ Logger::~Logger()
     delete output;
 }
 
+int cl_error_check(cl_int err, const char *err_string) {
+  if (err == CL_SUCCESS)
+    return 0;
+  printf("%s: %d\n", err_string, err);
+  return 1;
+}
+
 void Logger::dump(cl_kernel k)
 {
     // Output JSON format defined by
@@ -232,7 +240,52 @@ void Logger::dump(cl_kernel k)
     *output << "{" << endl << "\"language\": \"OpenCL\"," << endl;
 
     std::string kernelSourceFile = dumpKernelSource(ki);
+    
+    // Getting the device
+    cl_device_id *devices = (cl_device_id *) calloc(10, sizeof(cl_device_id));
+    
+    cl_program *program = (cl_program *) calloc(1, sizeof(cl_program));
+    size_t *size_p = (size_t *) calloc(1, sizeof(size_t));
+    
+    cl_int p =  clGetKernelInfo (k,
+  	CL_KERNEL_PROGRAM,
+  	sizeof(cl_program),
+  	program,
+  	size_p);
+    assert(p == CL_SUCCESS);
+    assert(program != NULL);
+    
+    *size_p = 0;
+    
+    cl_int info = clGetProgramInfo (*program,
+  	CL_PROGRAM_DEVICES,
+  	10 * sizeof(cl_device_id),
+  	devices,
+  	size_p);
+    
+    assert(info == CL_SUCCESS);
+    assert(devices != NULL);
 
+    printf("devices = %p", *devices);
+    
+    //assert(*devices != NULL && "no device found");
+    //assert(*(devices + sizeof(cl_device_id)) == NULL && "multiple devices found");
+    
+    cl_bool result;
+    size_t *size = (size_t *) calloc(8, 1);
+    
+    cl_int isLE = clGetDeviceInfo(devices[0],
+  	CL_DEVICE_ENDIAN_LITTLE,
+  	8,
+  	&result,
+  	size);
+    assert(isLE == CL_SUCCESS);
+
+    const char *endian = result ? "little": "big";
+    
+    *output << "\"endianness\": \"" << endian << "\"," << endl;
+    
+    
     *output << "\"kernel_file\": \"" << kernelSourceFile << "\"," << endl;
 
     // FIXME: Teach GPUVerify how to handle non zero global_offset
@@ -365,21 +418,6 @@ BufferInfo * Logger::tryGetBuffer(ArgInfo& ai) {
     return &buffers[mightBecl_mem];
 }
 
-static void recordMemFlags(std::ofstream* output, int flag, int clflag, int* firstFlagWritten, string flagstring)
-{
-    if (flag & clflag)
-    {
-        if (*firstFlagWritten)
-        {
-            *output << " | ";
-        } else
-        {
-            *firstFlagWritten = 1;
-        }
-        *output << flagstring;
-    }
-}
-
 void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 {
     *output << "{";
@@ -416,35 +454,25 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 
     if (BufferInfo * bi = tryGetBuffer(ai))
     {
-        
         *output << "\"type\": \"array\", ";
 
         *output << "\"size\": " << bi->size << ", ";
 
         *output << "\"flags\": \"";
-        
-//         LOGGING CL_MEMM_FLAGS
-
-        int firstFlagWritten = 0;
-
-        if (bi->flags == 0)
+        switch (bi->flags)
         {
-            // default case -> CL_MEM_READ_WRITE
-            firstFlagWritten = 1;
-            *output << "CL_MEM_READ_WRITE";
-        } else
-        {
-            recordMemFlags(output, bi->flags, CL_MEM_READ_WRITE, &firstFlagWritten, "CL_MEM_READ_WRITE");
-            recordMemFlags(output, bi->flags, CL_MEM_WRITE_ONLY, &firstFlagWritten, "CL_MEM_WRITE_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_READ_ONLY, &firstFlagWritten, "CL_MEM_READ_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_USE_HOST_PTR, &firstFlagWritten, "CL_MEM_USE_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_ALLOC_HOST_PTR, &firstFlagWritten, "CL_MEM_ALLOC_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_COPY_HOST_PTR, &firstFlagWritten, "CL_MEM_COPY_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_WRITE_ONLY, &firstFlagWritten, "CL_MEM_HOST_WRITE_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_READ_ONLY, &firstFlagWritten, "CL_MEM_HOST_READ_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_NO_ACCESS, &firstFlagWritten, "CL_MEM_HOST_NO_ACCESS");
+            case CL_MEM_READ_ONLY:
+                *output << "CL_MEM_READ_ONLY";
+                break;
+            case CL_MEM_WRITE_ONLY:
+                *output << "CL_MEM_WRITE_ONLY";
+                break;
+            case CL_MEM_READ_WRITE:
+                *output << "CL_MEM_READ_WRITE";
+                break;
+            default:
+                *output << "UNKNOWN";
         }
-
         *output << "\"";
 
         if (bi->data != NULL)
