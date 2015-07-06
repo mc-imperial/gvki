@@ -426,7 +426,7 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 //         LOGGING CL_MEMM_FLAGS
 
         int firstFlagWritten = 0;
-        
+
         if (bi->flags == 0)
         {
             // default case -> CL_MEM_READ_WRITE
