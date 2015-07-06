@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <stdint.h>
 #include "string.h"
 #include "gvki/Debug.h"
 
@@ -211,6 +212,13 @@ Logger::~Logger()
     delete output;
 }
 
+int cl_error_check(cl_int err, const char *err_string) {
+  if (err == CL_SUCCESS)
+    return 0;
+  printf("%s: %d\n", err_string, err);
+  return 1;
+}
+
 void Logger::dump(cl_kernel k)
 {
     // Output JSON format defined by
@@ -232,7 +240,52 @@ void Logger::dump(cl_kernel k)
     *output << "{" << endl << "\"language\": \"OpenCL\"," << endl;
 
     std::string kernelSourceFile = dumpKernelSource(ki);
+    
+    // Getting the device
+    cl_device_id *devices = (cl_device_id *) calloc(10, sizeof(cl_device_id));
+    
+    cl_program *program = (cl_program *) calloc(1, sizeof(cl_program));
+    size_t *size_p = (size_t *) calloc(1, sizeof(size_t));
+    
+    cl_int p =  clGetKernelInfo (k,
+  	CL_KERNEL_PROGRAM,
+  	sizeof(cl_program),
+  	program,
+  	size_p);
+    assert(p == CL_SUCCESS);
+    assert(program != NULL);
+    
+    *size_p = 0;
+    
+    cl_int info = clGetProgramInfo (*program,
+  	CL_PROGRAM_DEVICES,
+  	10 * sizeof(cl_device_id),
+  	devices,
+  	size_p);
+    
+    assert(info == CL_SUCCESS);
+    assert(devices != NULL);
 
+    printf("devices = %p", *devices);
+    
+    //assert(*devices != NULL && "no device found");
+    //assert(*(devices + sizeof(cl_device_id)) == NULL && "multiple devices found");
+    
+    cl_bool result;
+    size_t *size = (size_t *) calloc(8, 1);
+    
+    cl_int isLE = clGetDeviceInfo(devices[0],
+  	CL_DEVICE_ENDIAN_LITTLE,
+  	8,
+  	&result,
+  	size);
+    assert(isLE == CL_SUCCESS);
+
+    const char *endian = result ? "little": "big";
+    
+    *output << "\"endianness\": \"" << endian << "\"," << endl;
+    
+    
     *output << "\"kernel_file\": \"" << kernelSourceFile << "\"," << endl;
 
     // FIXME: Teach GPUVerify how to handle non zero global_offset
