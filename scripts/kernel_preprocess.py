@@ -36,8 +36,9 @@ def filterCppArguments(inputList):
         inputList.remove(removing)
     return inputList
 
-# ###############################################
+# ======================================================
 # MAIN SCRIPT
+# ======================================================
 if (len(sys.argv) != 2):
     print('arguments: path-to-gvki-folder')
     exit(0)
@@ -45,9 +46,10 @@ else:
     gvkiFolderPath = sys.argv[1]
     logJsonFile = open(gvkiFolderPath + '/log.json', 'r')
 
-    #dictionary to store kernels to process
+    # dictionary to store kernels to process
     processingQueue = {}
 
+    # read json file line by line and create dictionary of entries to process
     lastKernelFileName = None
     for jsonCurrentLine in logJsonFile:
         if (isKernelFileLine(jsonCurrentLine)):
@@ -71,7 +73,8 @@ else:
         callCommandList = ["cpp"] + [gvkiFolderPath + '/' + dictionaryEntryKey] + cppArguments
 
         # open output stdout file
-        processedKernelFile = open(gvkiFolderPath + '/' + dictionaryEntryKey + '.pre', 'w')
+        preKernelFileName = dictionaryEntryKey.rsplit('.',1)[0] + '.pre.' + dictionaryEntryKey.rsplit('.',1)[1]
+        processedKernelFile = open(gvkiFolderPath + '/' + preKernelFileName, 'w')
 
         # call subprocess
         print(callCommandList)
@@ -80,3 +83,21 @@ else:
         processedKernelFile.close()
 
     logJsonFile.close()
+    
+    # generate log.pre.json file ==========================================
+    logJsonFile = open(gvkiFolderPath + '/log.json', 'r')
+    logJsonFilePre = open(gvkiFolderPath + '/log.pre.json', 'w')
+    
+    for jsonCurrentLine in logJsonFile:
+        if (isKernelFileLine(jsonCurrentLine)):
+            # if it's a kernel file name, replace it with kernelname.pre.cl
+            kernelFileName = getJsonData(jsonCurrentLine)
+            # generate filename.pre.cl
+            kernelFileNamePre = kernelFileName.rsplit('.',1)[0] + '.pre.' + kernelFileName.rsplit('.',1)[1]
+            stringToWrite = '"kernel_file": "' + kernelFileNamePre + '",\n'
+            logJsonFilePre.write(stringToWrite)
+        else:
+            # otherwise leave unchanged
+            logJsonFilePre.write(jsonCurrentLine)
+    logJsonFile.close()
+    logJsonFilePre.close()
