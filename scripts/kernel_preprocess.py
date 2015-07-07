@@ -83,21 +83,3 @@ else:
         processedKernelFile.close()
 
     logJsonFile.close()
-    
-    # generate log.pre.json file ==========================================
-    logJsonFile = open(gvkiFolderPath + '/log.json', 'r')
-    logJsonFilePre = open(gvkiFolderPath + '/log.pre.json', 'w')
-    
-    for jsonCurrentLine in logJsonFile:
-        if (isKernelFileLine(jsonCurrentLine)):
-            # if it's a kernel file name, replace it with kernelname.pre.cl
-            kernelFileName = getJsonData(jsonCurrentLine)
-            # generate filename.pre.cl
-            kernelFileNamePre = kernelFileName.rsplit('.',1)[0] + '.pre.' + kernelFileName.rsplit('.',1)[1]
-            stringToWrite = '"kernel_file": "' + kernelFileNamePre + '",\n'
-            logJsonFilePre.write(stringToWrite)
-        else:
-            # otherwise leave unchanged
-            logJsonFilePre.write(jsonCurrentLine)
-    logJsonFile.close()
-    logJsonFilePre.close()
