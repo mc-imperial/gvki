@@ -46,6 +46,9 @@ DEFN(clCreateBuffer)
         BufferInfo bi;
         bi.size = size;
         bi.flags = flags;
+        if (bi.flags & CL_MEM_USE_HOST_PTR) {
+          bi.data = host_ptr;
+        }
         l.buffers[buffer] = bi;
     }
 
@@ -539,9 +542,9 @@ DEFN(clEnqueueNDRangeKernel)
         {
             if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
             {
-                if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+                if (!(bi->flags & CL_MEM_WRITE_ONLY) && !(bi->flags & CL_MEM_USE_HOST_PTR))
                 {
-                    assert(bi->data == NULL && "Data field of buffer should not be set between kernel invocations");
+                    assert(bi->data == NULL && "Data field of non-host-ptr buffer should not be set between kernel invocations");
                     bi->data = new char[bi->size];
 
                     cl_mem memObject;
@@ -628,7 +631,7 @@ DEFN(clEnqueueNDRangeKernel)
           {
             if (BufferInfo *bi = l.tryGetBuffer(ki.arguments[argIndex]))
             {
-              if (bi->flags == CL_MEM_READ_ONLY || bi->flags == CL_MEM_READ_WRITE)
+              if (!(bi->flags & CL_MEM_WRITE_ONLY) && !(bi->flags & CL_MEM_USE_HOST_PTR))
               {
                 assert(bi->data != NULL && "Data field of buffer should not be null after kernel invocation");
                 delete bi->data;
