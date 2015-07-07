@@ -7,7 +7,6 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <stdint.h>
 #include "string.h"
 #include "gvki/Debug.h"
 
@@ -212,13 +211,6 @@ Logger::~Logger()
     delete output;
 }
 
-int cl_error_check(cl_int err, const char *err_string) {
-  if (err == CL_SUCCESS)
-    return 0;
-  printf("%s: %d\n", err_string, err);
-  return 1;
-}
-
 void Logger::dump(cl_kernel k)
 {
     // Output JSON format defined by
@@ -240,52 +232,41 @@ void Logger::dump(cl_kernel k)
     *output << "{" << endl << "\"language\": \"OpenCL\"," << endl;
 
     std::string kernelSourceFile = dumpKernelSource(ki);
-    
-    // Getting the device
-    cl_device_id *devices = (cl_device_id *) calloc(10, sizeof(cl_device_id));
-    
-    cl_program *program = (cl_program *) calloc(1, sizeof(cl_program));
-    size_t *size_p = (size_t *) calloc(1, sizeof(size_t));
-    
-    cl_int p =  clGetKernelInfo (k,
-  	CL_KERNEL_PROGRAM,
-  	sizeof(cl_program),
-  	program,
-  	size_p);
-    assert(p == CL_SUCCESS);
-    assert(program != NULL);
-    
-    *size_p = 0;
-    
-    cl_int info = clGetProgramInfo (*program,
-  	CL_PROGRAM_DEVICES,
-  	10 * sizeof(cl_device_id),
-  	devices,
-  	size_p);
-    
-    assert(info == CL_SUCCESS);
-    assert(devices != NULL);
 
-    printf("devices = %p", *devices);
-    
-    //assert(*devices != NULL && "no device found");
-    //assert(*(devices + sizeof(cl_device_id)) == NULL && "multiple devices found");
-    
-    cl_bool result;
-    size_t *size = (size_t *) calloc(8, 1);
-    
-    cl_int isLE = clGetDeviceInfo(devices[0],
-  	CL_DEVICE_ENDIAN_LITTLE,
-  	8,
-  	&result,
-  	size);
-    assert(isLE == CL_SUCCESS);
+    // Getting the device to query for endianness
 
-    const char *endian = result ? "little": "big";
-    
-    *output << "\"endianness\": \"" << endian << "\"," << endl;
-    
-    
+    cl_program program;
+	// FIXME Is this the correct way to call a OpenCL function?
+    cl_int result = clGetKernelInfo(k, CL_KERNEL_PROGRAM, sizeof(cl_program),
+	  	&program, NULL);
+	if (result != CL_SUCCESS)
+		ERROR_MSG("Error in querying for endianness: error getting kernel program.");
+
+	cl_uint num_devices;
+	result = clGetProgramInfo(program, CL_PROGRAM_NUM_DEVICES,	sizeof(cl_uint),
+		&num_devices, NULL);
+	if (result != CL_SUCCESS)
+		ERROR_MSG("Error in querying for endianness: error getting number of devices.");
+
+	cl_device_id *devices = (cl_device_id *) calloc (num_devices, sizeof(cl_device_id));
+    result = clGetProgramInfo(program, CL_PROGRAM_DEVICES, num_devices * sizeof(cl_device_id),
+	  	devices, NULL);
+	if (result != CL_SUCCESS)
+		ERROR_MSG("Error in querying for endianness: error getting devices.");
+
+	assert(*devices != NULL && "No devices returned from clGetProgramInfo call!");
+
+    cl_bool little_endian;
+    result = clGetDeviceInfo(*devices, CL_DEVICE_ENDIAN_LITTLE,	sizeof(cl_bool),
+	  	&little_endian, NULL);
+	if (result != CL_SUCCESS)
+		ERROR_MSG("Error in querying for endianness: error during clGetDeviceInfo query.");
+
+    *output << "\"endianness\": \"";
+	*output << ((char*) (little_endian ? "little": "big"));
+	*output << "\"," << endl;
+
+
     *output << "\"kernel_file\": \"" << kernelSourceFile << "\"," << endl;
 
     // FIXME: Teach GPUVerify how to handle non zero global_offset
@@ -440,7 +421,7 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
     {
         // NULL was passed to clSetKernelArg()
         // That implies its for unallocated memory
-        *output << "\"type\": \"array\",";
+        *output << "\"type\": \"array\", ";
 
         // If the arg is for local memory
         if (ai.argSize != sizeof(cl_mem) && ai.argSize != sizeof(cl_sampler))
@@ -448,6 +429,7 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
             // We assume this means this arguments is for local memory
             // where size actually means the sizeof the underlying buffer
             // rather than the size of the type.
+            *output << "\"address_space\": \"local\", ";
             *output << "\"size\" : " << ai.argSize;
         }
         *output << "}";
@@ -471,10 +453,12 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
     {
         *output << "\"type\": \"array\", ";
 
+        *output << "\"address_space\": \"global\", ";
+
         *output << "\"size\": " << bi->size << ", ";
 
         *output << "\"flags\": [ ";
-        
+
 //         LOGGING CL_MEMM_FLAGS
 
         if (bi->flags != 0)
@@ -486,9 +470,6 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
             recordMemFlags(output, bi->flags, CL_MEM_USE_HOST_PTR, firstFlagWritten, "CL_MEM_USE_HOST_PTR");
             recordMemFlags(output, bi->flags, CL_MEM_ALLOC_HOST_PTR, firstFlagWritten, "CL_MEM_ALLOC_HOST_PTR");
             recordMemFlags(output, bi->flags, CL_MEM_COPY_HOST_PTR, firstFlagWritten, "CL_MEM_COPY_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_WRITE_ONLY, firstFlagWritten, "CL_MEM_HOST_WRITE_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_READ_ONLY, firstFlagWritten, "CL_MEM_HOST_READ_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_NO_ACCESS, firstFlagWritten, "CL_MEM_HOST_NO_ACCESS");
         }
 
         *output << " ]";
