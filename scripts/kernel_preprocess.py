@@ -39,11 +39,31 @@ def filterCppArguments(inputList):
 # ======================================================
 # MAIN SCRIPT
 # ======================================================
-if (len(sys.argv) != 2):
-    print('arguments: path-to-gvki-folder')
+if (len(sys.argv) < 2):
+    print('arguments:')
+    print('\tdir=gvkiDirectory')
+    print('\tcpp=preprocessorExecutable\t(optional)')
     exit(0)
 else:
-    gvkiFolderPath = sys.argv[1]
+    
+    gvkiFolderPath = None
+    cPreProcessorExecutable = 'cpp'
+    
+    # parse command line arguments
+    for i in range(1,len(sys.argv)):
+        cmdArgKey = sys.argv[i].split('=')[0]
+        if (cmdArgKey == 'dir'):
+            gvkiFolderPath = sys.argv[i].split('=')[1]
+        if (cmdArgKey == 'cpp'):
+            cPreProcessorExecutable = sys.argv[i].split('=')[1]
+            
+    # check for mandatory arguments
+    if (gvkiFolderPath == None):
+        print('arguments:')
+        print('\tdir=gvkiDirectory')
+        print('\tcpp=preprocessorExecutable\t(optional)')
+        exit(0)
+    
     logJsonFile = open(gvkiFolderPath + '/log.json', 'r')
 
     # dictionary to store kernels to process
@@ -70,7 +90,7 @@ else:
         cppArguments = filterCppArguments(cppArguments)
 
         # construct call command
-        callCommandList = ["cpp"] + [gvkiFolderPath + '/' + dictionaryEntryKey] + cppArguments
+        callCommandList = [cPreProcessorExecutable] + [gvkiFolderPath + '/' + dictionaryEntryKey] + cppArguments
 
         # open output stdout file
         preKernelFileName = dictionaryEntryKey.rsplit('.',1)[0] + '.pre.' + dictionaryEntryKey.rsplit('.',1)[1]
