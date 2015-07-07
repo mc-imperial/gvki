@@ -371,12 +371,12 @@ static void recordMemFlags(std::ofstream* output, int flag, int clflag, int* fir
     {
         if (*firstFlagWritten)
         {
-            *output << " | ";
+            *output << ", ";
         } else
         {
             *firstFlagWritten = 1;
         }
-        *output << flagstring;
+        *output << "\"" << flagstring << "\"";
     }
 }
 
@@ -421,7 +421,7 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
 
         *output << "\"size\": " << bi->size << ", ";
 
-        *output << "\"flags\": \"";
+        *output << "\"flags\": [ ";
         
 //         LOGGING CL_MEMM_FLAGS
 
@@ -445,7 +445,7 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
             recordMemFlags(output, bi->flags, CL_MEM_HOST_NO_ACCESS, &firstFlagWritten, "CL_MEM_HOST_NO_ACCESS");
         }
 
-        *output << "\"";
+        *output << " ]";
 
         if (bi->data != NULL)
         {
