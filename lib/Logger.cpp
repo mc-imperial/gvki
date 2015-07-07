@@ -365,16 +365,16 @@ BufferInfo * Logger::tryGetBuffer(ArgInfo& ai) {
     return &buffers[mightBecl_mem];
 }
 
-static void recordMemFlags(std::ofstream* output, int flag, int clflag, int* firstFlagWritten, string flagstring)
+static void recordMemFlags(std::ofstream* output, int flag, int clflag, bool& firstFlagWritten, string flagstring)
 {
     if (flag & clflag)
     {
-        if (*firstFlagWritten)
+        if (firstFlagWritten)
         {
             *output << ", ";
         } else
         {
-            *firstFlagWritten = 1;
+            firstFlagWritten = true;
         }
         *output << "\"" << flagstring << "\"";
     }
@@ -425,30 +425,25 @@ void Logger::printJSONKernelArgumentInfo(ArgInfo& ai)
         
 //         LOGGING CL_MEMM_FLAGS
 
-        int firstFlagWritten = 0;
-
-        if (bi->flags == 0)
+        if (bi->flags != 0)
         {
-            // default case -> CL_MEM_READ_WRITE
-            firstFlagWritten = 1;
-            *output << "CL_MEM_READ_WRITE";
-        } else
-        {
-            recordMemFlags(output, bi->flags, CL_MEM_READ_WRITE, &firstFlagWritten, "CL_MEM_READ_WRITE");
-            recordMemFlags(output, bi->flags, CL_MEM_WRITE_ONLY, &firstFlagWritten, "CL_MEM_WRITE_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_READ_ONLY, &firstFlagWritten, "CL_MEM_READ_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_USE_HOST_PTR, &firstFlagWritten, "CL_MEM_USE_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_ALLOC_HOST_PTR, &firstFlagWritten, "CL_MEM_ALLOC_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_COPY_HOST_PTR, &firstFlagWritten, "CL_MEM_COPY_HOST_PTR");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_WRITE_ONLY, &firstFlagWritten, "CL_MEM_HOST_WRITE_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_READ_ONLY, &firstFlagWritten, "CL_MEM_HOST_READ_ONLY");
-            recordMemFlags(output, bi->flags, CL_MEM_HOST_NO_ACCESS, &firstFlagWritten, "CL_MEM_HOST_NO_ACCESS");
+            bool firstFlagWritten = false;
+            recordMemFlags(output, bi->flags, CL_MEM_READ_WRITE, firstFlagWritten, "CL_MEM_READ_WRITE");
+            recordMemFlags(output, bi->flags, CL_MEM_WRITE_ONLY, firstFlagWritten, "CL_MEM_WRITE_ONLY");
+            recordMemFlags(output, bi->flags, CL_MEM_READ_ONLY, firstFlagWritten, "CL_MEM_READ_ONLY");
+            recordMemFlags(output, bi->flags, CL_MEM_USE_HOST_PTR, firstFlagWritten, "CL_MEM_USE_HOST_PTR");
+            recordMemFlags(output, bi->flags, CL_MEM_ALLOC_HOST_PTR, firstFlagWritten, "CL_MEM_ALLOC_HOST_PTR");
+            recordMemFlags(output, bi->flags, CL_MEM_COPY_HOST_PTR, firstFlagWritten, "CL_MEM_COPY_HOST_PTR");
+            recordMemFlags(output, bi->flags, CL_MEM_HOST_WRITE_ONLY, firstFlagWritten, "CL_MEM_HOST_WRITE_ONLY");
+            recordMemFlags(output, bi->flags, CL_MEM_HOST_READ_ONLY, firstFlagWritten, "CL_MEM_HOST_READ_ONLY");
+            recordMemFlags(output, bi->flags, CL_MEM_HOST_NO_ACCESS, firstFlagWritten, "CL_MEM_HOST_NO_ACCESS");
         }
 
         *output << " ]";
 
-        if (bi->data != NULL)
+        if (!(bi->flags & CL_MEM_WRITE_ONLY))
         {
+            assert ((bi->data != NULL) && "No data was found for readable kernel array");
             std::stringstream dataFileName;
             dataFileName << "array_data_" << arrayDataCounter << ".bin";
             arrayDataCounter++;
