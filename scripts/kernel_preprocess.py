@@ -2,62 +2,65 @@
 
 import sys
 import subprocess
+import argparse
+import json
 
-MIN_KERNEL_FILE_LINE_LENGTH = 13
-KERNEL_FILE_LINE_ENTRY_CHAR = 16
-MIN_COMPILER_FLAGS_LINE_LENGTH = 16
-COMPILER_FLAGS_LINE_ENTRY_CHAR = 19
-
-# checks if current line is compiler arguments
-def isCompilerArgumentsLine(inputLineString):
-    inputLineStringLength = len(inputLineString)
-    if (inputLineStringLength < MIN_COMPILER_FLAGS_LINE_LENGTH):
-        return 0
-    return inputLineString.split(':', 1)[0].rsplit(',',1)[0].strip().replace('"','') == 'compiler_flags'
-
-# checks if current line is kernel file name
-def isKernelFileLine(inputLineString):
-    inputLineStringLength = len(inputLineString)
-    if (inputLineStringLength < MIN_KERNEL_FILE_LINE_LENGTH):
-        return 0
-    return inputLineString.split(':', 1)[0].rsplit(',',1)[0].strip().replace('"','') == 'kernel_file'
-
-# extract the json data
-def getJsonData(inputLineString):
-    return inputLineString.split(':', 1)[1].rsplit(',',1)[0].strip().replace('"','')
-
+# ........................................
 # filter not -I and -D arguments from list
 def filterCppArguments(inputList):
-    toBeRemoved = []
-    for listEntry in inputList:
-        if (not(listEntry[0:2] in ['-i', '-I', '-D'])):
-            toBeRemoved = toBeRemoved + [listEntry]
-    for removing in toBeRemoved:
-        inputList.remove(removing)
-    return inputList
+    outputList = []
+    i = 0
+    while i < len(inputList):
+        if len(inputList[i]) >= 2 and inputList[i][0:2] in ['-i','-I','-D']:
+            outputList.append(inputList[i])
+            i = i + 1
+            if (i < len(inputList) and (len(inputList[i-1]) == 2)):
+                if inputList[i][0] != '-':
+                    outputList.append(inputList[i])
+                    i = i + 1
+        else:
+            i = i + 1
+    return outputList
 
 # ======================================================
 # MAIN SCRIPT
 # ======================================================
-if (len(sys.argv) != 2):
-    print('arguments: path-to-gvki-folder')
-    exit(0)
-else:
-    gvkiFolderPath = sys.argv[1]
+def main(argv=None):
+    # ............................
+    # load command line arguments
+    if argv is None:
+        argv = sys.argv
+    
+    # .......................................
+    # check number of arguments
+    if (len(argv) < 2):
+        print('run with -h to show help')
+        exit(0)
+
+    # ....................................................
+    # parse command line arguments with argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', help='The gvki-n directory to work with', required=True)
+    parser.add_argument('--preprocessor', help='The preprocessor command to use. Default: cpp', default='cpp')
+    args = parser.parse_args(argv[1:])
+    gvkiFolderPath = args.dir
+    cPreProcessorExecutable = args.preprocessor
     logJsonFile = open(gvkiFolderPath + '/log.json', 'r')
 
+    # ...........................................
     # dictionary to store kernels to process
     processingQueue = {}
-
-    # read json file line by line and create dictionary of entries to process
-    lastKernelFileName = None
-    for jsonCurrentLine in logJsonFile:
-        if (isKernelFileLine(jsonCurrentLine)):
-            lastKernelFileName = getJsonData(jsonCurrentLine)
-        if (isCompilerArgumentsLine(jsonCurrentLine)):
-            # add to kernels to process
-            processingQueue[lastKernelFileName] = getJsonData(jsonCurrentLine)
     
+    # ..............................
+    # process json file
+    jsonfile = json.loads(logJsonFile.read())
+    for elem in jsonfile:
+        kernelName = elem['kernel_file']
+        compilerFlags = elem['compiler_flags']
+        processingQueue[kernelName] = compilerFlags
+    
+    # ..........................................................
+    # preprocess entires in dictionary
     for dictionaryEntryKey in processingQueue:
         # dictionaryEntryKey is Kernel name
         # dictionaryEntryValue is Compiler flags
@@ -70,7 +73,7 @@ else:
         cppArguments = filterCppArguments(cppArguments)
 
         # construct call command
-        callCommandList = ["cpp"] + [gvkiFolderPath + '/' + dictionaryEntryKey] + cppArguments
+        callCommandList = [cPreProcessorExecutable] + [gvkiFolderPath + '/' + dictionaryEntryKey] + cppArguments
 
         # open output stdout file
         preKernelFileName = dictionaryEntryKey.rsplit('.',1)[0] + '.pre.' + dictionaryEntryKey.rsplit('.',1)[1]
@@ -83,3 +86,8 @@ else:
         processedKernelFile.close()
 
     logJsonFile.close()
+
+# ===========================================
+# call main if executed as script
+if __name__ == '__main__':
+    sys.exit(main())
