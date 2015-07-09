@@ -12,8 +12,9 @@ def printUsage():
     print('Please run ' + sys.argv[0] + ' -h for help')
     exit(0)
 
-ENV_GVKI_LIMIT_INTERCEPTIONS = 'GVKI_LIMIT_INTERCEPTIONS='
-ENV_GVKI_LOG_DATA = 'GVKI_LOG_DATA='
+ENV_GVKI_LIMIT_INTERCEPTIONS = 'GVKI_LIMIT_INTERCEPTIONS'
+ENV_GVKI_LOG_DATA = 'GVKI_LOG_DATA'
+ENV_GVKI_WORKING_DIR = 'GVKI_ROOT'
 
 # ==============================================================
 # add environment variable for preload library
@@ -44,6 +45,12 @@ def addLogDataEnv(optionsLogData):
 def addInterceptionsEnv(optionsInterceptionsPerKernel):
     os.environ[ENV_GVKI_LIMIT_INTERCEPTIONS] = optionsInterceptionsPerKernel
 
+# ===============================================
+# add environment variable for GVKI_WORKING_DIR
+def addWorkingDirEnv(workingDir):
+    if (workingDir != ''):
+        os.environ[ENV_GVKI_WORKING_DIR] = workingDir
+
 # ===================================
 # MAIN METHOD
 def main(argv=None):
@@ -62,42 +69,55 @@ def main(argv=None):
     parser.add_argument('--preprocess', help='Specifies to preprocess the intercepted kernels', action='store_true', default=False)
     parser.add_argument('--preprocessor', help='Specifies the preprocessor command to use', default='cpp')
     parser.add_argument('--preload-library', help='Specifies to use preload library.', default='')
+    parser.add_argument('--working-dir', help='Specifies where the gvki-n folders will be created', default='')
+    parser.add_argument('--verbose', help='Prints script debug messages', action='store_true', default=False)
     parser.add_argument('programcommand', nargs='*', help='The program to run')
     args = parser.parse_args(argv[1:])
     if (args.preload_library != ''):
         optionsUsePreloadLibrary = True
         
     # ..............................................
-    # check for missing arguments
+    # check for missing arguments and prepare variables
     if len(args.programcommand) == 0:
         print('Please specify program to run')
         printUsage()
+    if (args.working_dir == ''):
+        scriptWorkingDir = os.getcwd()
+    else:
+        scriptWorkingDir = args.working_dir
     
     # ..........................................................
     # debug: print parsed arguments
-    print("log data " + str(args.log_data))
-    print("preprocess " + str(args.preprocess))
-    print("interceptions " + str(args.interceptions_per_kernel))
-    print("preprocessor " + args.preprocessor)
-    print("preload " + str(optionsUsePreloadLibrary))
-    print("preloadlib " + args.preload_library)
-    print(args.programcommand)
+    if (args.verbose):
+        print("log data " + str(args.log_data))
+        print("preprocess " + str(args.preprocess))
+        print("interceptions " + str(args.interceptions_per_kernel))
+        print("preprocessor " + args.preprocessor)
+        print("preload " + str(optionsUsePreloadLibrary))
+        print("preloadlib " + args.preload_library)
+        print(args.programcommand)
     
     # ..............................................................
     # get initial directory structure
     initialDirectoriesList = []
-    for walkroot, walkdirs, walkfiles in os.walk('.'):
+    for walkroot, walkdirs, walkfiles in os.walk(scriptWorkingDir):
         for dirnames in walkdirs:
             initialDirectoriesList.append(dirnames)
     
     # .........................................................
     # set environment variables for gvki and preloading
-    commandToRun = []
     addPreloadEnv(optionsUsePreloadLibrary, args.preload_library)
     addLogDataEnv(args.log_data)
     addInterceptionsEnv(args.interceptions_per_kernel)
-    commandToRun = commandToRun + args.programcommand
-    print("running command " + str(commandToRun))
+    addWorkingDirEnv(args.working_dir)
+    commandToRun = args.programcommand
+    if args.verbose:
+        print('Env variables: LD, WORKDIR, LOGDATA, LIMITINTERC')
+        os.system('printenv LD_PRELOAD')
+        os.system('printenv GVKI_WORKING_DIR')
+        os.system('printenv GVKI_LOG_DATA')
+        os.system('printenv GVKI_LIMIT_INTERCEPTIONS')
+        print("running command " + str(commandToRun))
     
     # ........................................................
     # run program
@@ -107,7 +127,7 @@ def main(argv=None):
     # get final directory structure and make difference
     finalDirectoriesList = []
     gvkiDirectoriesList = []
-    for walkroot, walkdirs, walkfiles in os.walk('.'):
+    for walkroot, walkdirs, walkfiles in os.walk(scriptWorkingDir):
         for dirnames in walkdirs:
             finalDirectoriesList.append(dirnames)
     for dirname in initialDirectoriesList:
@@ -116,15 +136,17 @@ def main(argv=None):
         if (dirname[0:5] == 'gvki-'):
             gvkiDirectoriesList.append(dirname)
     
-    print(gvkiDirectoriesList)
+    if args.verbose:
+        print(gvkiDirectoriesList)
     if (len(gvkiDirectoriesList) == 0):
-        print("No gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?")
+        print("\nNo gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?\n")
     
     # .............................................................
     # run preprocessor
+
     if (args.preprocess):
         for gvkiDirName in gvkiDirectoriesList:
-            kernel_preprocess.main(['preprocess', '--dir', gvkiDirName, '--preprocessor', args.preprocessor])
+            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + '/' + gvkiDirName, '--preprocessor', args.preprocessor])
     
 # ===========================================
 # call main if executed as script
