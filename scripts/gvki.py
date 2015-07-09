@@ -147,7 +147,7 @@ def main(argv=None):
 
     if (args.preprocess):
         for gvkiDirName in gvkiDirectoriesList:
-            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + '/' + gvkiDirName, '--preprocessor', args.preprocessor])
+            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
     
 # ===========================================
 # call main if executed as script
