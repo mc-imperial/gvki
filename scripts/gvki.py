@@ -95,6 +95,7 @@ def main(argv=None):
         print("preprocessor " + args.preprocessor)
         print("preload " + str(optionsUsePreloadLibrary))
         print("preloadlib " + args.preload_library)
+        print("workdir " + args.working_dir)
         print(args.programcommand)
     
     # ..............................................................
@@ -114,9 +115,9 @@ def main(argv=None):
     if args.verbose:
         print('Env variables: LD, WORKDIR, LOGDATA, LIMITINTERC')
         os.system('printenv LD_PRELOAD')
-        os.system('printenv GVKI_WORKING_DIR')
-        os.system('printenv GVKI_LOG_DATA')
-        os.system('printenv GVKI_LIMIT_INTERCEPTIONS')
+        os.system('printenv ' + ENV_GVKI_WORKING_DIR)
+        os.system('printenv ' + ENV_GVKI_LOG_DATA)
+        os.system('printenv ' + ENV_GVKI_LIMIT_INTERCEPTIONS)
         print("running command " + str(commandToRun))
     
     # ........................................................
@@ -146,7 +147,7 @@ def main(argv=None):
 
     if (args.preprocess):
         for gvkiDirName in gvkiDirectoriesList:
-            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + '/' + gvkiDirName, '--preprocessor', args.preprocessor])
+            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
     
 # ===========================================
 # call main if executed as script
