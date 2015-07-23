@@ -516,6 +516,21 @@ DEFN(clSetKernelArg)
     return success;
 }
 
+
+// OpenCL 2.0 specific
+// GVKI does not support this and will gracefully exit with an error
+cl_int
+DEFN(clSetKernelArgSVMPointer)
+    ( cl_kernel kernel,
+      cl_uint arg_index,
+      const void* arg_value
+    )
+{
+    printf("OpenCL 2.0 SVM Pointer as argument not supported by GVKI.\n");
+    exit(95);
+}
+
+
 /* 5.8 Executing kernels */
 cl_int
 DEFN(clEnqueueNDRangeKernel)

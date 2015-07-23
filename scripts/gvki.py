@@ -7,6 +7,7 @@ import os
 import argparse
 
 import kernel_preprocess
+import colors
 
 def printUsage():
     print('Please run ' + sys.argv[0] + ' -h for help')
@@ -55,7 +56,7 @@ def addWorkingDirEnv(workingDir):
 # MAIN METHOD
 def main(argv=None):
     if argv is None:
-        argv = sys.argv
+        argv = sys.argv[1:]
     
     # ....................................................
     # options and defaults
@@ -64,15 +65,35 @@ def main(argv=None):
     # ...................................................
     # parse command line arguments (argparse)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--log-data', help='gvki will log data to binary files', action='store_true', default=False)
-    parser.add_argument('--interceptions-per-kernel', help='The maximum number of kernels to intercept. 0 is unlimited. Default: 0', default='0')
-    parser.add_argument('--preprocess', help='Specifies to preprocess the intercepted kernels', action='store_true', default=False)
-    parser.add_argument('--preprocessor', help='Specifies the preprocessor command to use', default='cpp')
-    parser.add_argument('--preload-library', help='Specifies to use preload library.', default='')
-    parser.add_argument('--working-dir', help='Specifies where the gvki-n folders will be created', default='')
-    parser.add_argument('--verbose', help='Prints script debug messages', action='store_true', default=False)
-    parser.add_argument('programcommand', nargs='*', help='The program to run')
-    args = parser.parse_args(argv[1:])
+    parser.add_argument('--log-data', 
+                        help='gvki will log data to binary files', 
+                        action='store_true', 
+                        default=False)
+    parser.add_argument('--interceptions-per-kernel', 
+                        help='The maximum number of kernels to intercept. 0 is unlimited. Default: 0', 
+                        default='0')
+    parser.add_argument('--preprocess', 
+                        help='Specifies to preprocess the intercepted kernels', 
+                        action='store_true', 
+                        default=False)
+    parser.add_argument('--preprocessor', 
+                        help='Specifies the preprocessor command to use', 
+                        default='cpp')
+    parser.add_argument('--preload-library', 
+                        help='Specifies to use preload library.', 
+                        default='')
+    parser.add_argument('--working-dir', 
+                        help='Specifies where the gvki-n folders will be created', 
+                        default='')
+    parser.add_argument('--verbose', 
+                        help='Prints script debug messages', 
+                        action='store_true', 
+                        default=False)
+    parser.add_argument('programcommand', 
+                        nargs='*', 
+                        help='The program to run')
+    
+    args = parser.parse_args(argv)
     if (args.preload_library != ''):
         optionsUsePreloadLibrary = True
         
@@ -82,9 +103,14 @@ def main(argv=None):
         print('Please specify program to run')
         printUsage()
     if (args.working_dir == ''):
-        scriptWorkingDir = os.getcwd()
+        scriptWorkingDir = os.path.abspath(os.getcwd()) + os.sep
     else:
-        scriptWorkingDir = args.working_dir
+        scriptWorkingDir = os.path.abspath(args.working_dir) + os.sep
+    
+    # ..........................................................................
+    # Initialize Errors log
+    numberGvkiErrors = 0
+    gvkiErrorsLog = open(os.path.join(scriptWorkingDir, 'gvkiErrorsLog.txt'), 'a')
     
     # ..........................................................
     # debug: print parsed arguments
@@ -122,7 +148,12 @@ def main(argv=None):
     
     # ........................................................
     # run program
-    subprocess.call(commandToRun, shell=True)
+    code = subprocess.call(commandToRun, shell=True)
+    if code == 95: # gvki signals unsupported 2.0 functions
+        print(colors.red() + 'GVKI has detected an unsupported OpenCL 2.0 function call.' + colors.end())
+        print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.' + colors.end())
+        numberGvkiErrors += 1
+        gvkiErrorsLog.write('Error in ' + ' '.join(commandToRun) + '\n')
     
     # ...........................................................
     # get final directory structure and make difference
@@ -140,14 +171,21 @@ def main(argv=None):
     if args.verbose:
         print(gvkiDirectoriesList)
     if (len(gvkiDirectoriesList) == 0):
-        print("\nNo gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?\n")
+        print(colors.red() + "\nNo gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?\n" + colors.end())
     
     # .............................................................
     # run preprocessor
-
     if (args.preprocess):
         for gvkiDirName in gvkiDirectoriesList:
-            kernel_preprocess.main(['preprocess', '--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
+            kernel_preprocess.main(['--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
+            
+    # ..........................................................................
+    # print final status
+    if numberGvkiErrors > 0:
+        print(colors.red() + str(numberGvkiErrors) + ' errors encountered.' + colors.end())
+        print(colors.red() + 'Please see ' + scriptWorkingDir + os.sep + 'gvkiErrorsLog.txt for details' + colors.end())
+    
+    gvkiErrorsLog.close()
     
 # ===========================================
 # call main if executed as script
