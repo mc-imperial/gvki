@@ -30,7 +30,7 @@ def main(argv=None):
     # ............................
     # load command line arguments
     if argv is None:
-        argv = sys.argv
+        argv = sys.argv[1:]
     
     # .......................................
     # check number of arguments
@@ -43,7 +43,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir', help='The gvki-n directory to work with', required=True)
     parser.add_argument('--preprocessor', help='The preprocessor command to use. Default: cpp', default='cpp')
-    args = parser.parse_args(argv[1:])
+    args = parser.parse_args(argv)
     gvkiFolderPath = args.dir
     cPreProcessorExecutable = args.preprocessor
     logJsonFile = open(gvkiFolderPath + os.sep + 'log.json', 'r')
@@ -81,7 +81,6 @@ def main(argv=None):
         processedKernelFile = open(gvkiFolderPath + os.sep + preKernelFileName, 'w')
 
         # call subprocess
-        print(callCommandList)
         subprocess.call(callCommandList, stdout=processedKernelFile)
         
         processedKernelFile.close()
