@@ -151,33 +151,39 @@ def main(argv=None):
     code = subprocess.call(commandToRun, shell=True)
     if code == 95: # gvki signals unsupported 2.0 functions
         print(colors.red() + 'GVKI has detected an unsupported OpenCL 2.0 function call.' + colors.end())
-        print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.' + colors.end())
+        print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.\n' + colors.end())
         numberGvkiErrors += 1
-        gvkiErrorsLog.write('Error in ' + ' '.join(commandToRun) + '\n')
-    
-    # ...........................................................
-    # get final directory structure and make difference
-    finalDirectoriesList = []
-    gvkiDirectoriesList = []
-    for walkroot, walkdirs, walkfiles in os.walk(scriptWorkingDir):
-        for dirnames in walkdirs:
-            finalDirectoriesList.append(dirnames)
-    for dirname in initialDirectoriesList:
-        finalDirectoriesList.remove(dirname)
-    for dirname in finalDirectoriesList:
-        if (dirname[0:5] == 'gvki-'):
-            gvkiDirectoriesList.append(dirname)
-    
-    if args.verbose:
-        print(gvkiDirectoriesList)
-    if (len(gvkiDirectoriesList) == 0):
-        print(colors.red() + "\nNo gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?\n" + colors.end())
-    
-    # .............................................................
-    # run preprocessor
-    if (args.preprocess):
-        for gvkiDirName in gvkiDirectoriesList:
-            kernel_preprocess.main(['--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
+        gvkiErrorsLog.write('Error 95 (SVMPointer Error) in ' + ' '.join(commandToRun) + '\n\n')
+    elif code == 94: # gvki signals clCreateProgramFromBinary unsupported call
+        print(colors.red() + 'GVKI has detected an unsupported clCreateProgramFromBinary call.' + colors.end())
+        print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.\n' + colors.end())
+        numberGvkiErrors += 1
+        gvkiErrorsLog.write('Error 94 (programFromBinary Error) in ' + ' '.join(commandToRun) + '\n\n')
+    else:
+        
+        # ...........................................................
+        # get final directory structure and make difference
+        finalDirectoriesList = []
+        gvkiDirectoriesList = []
+        for walkroot, walkdirs, walkfiles in os.walk(scriptWorkingDir):
+            for dirnames in walkdirs:
+                finalDirectoriesList.append(dirnames)
+        for dirname in initialDirectoriesList:
+            finalDirectoriesList.remove(dirname)
+        for dirname in finalDirectoriesList:
+            if (dirname[0:5] == 'gvki-'):
+                gvkiDirectoriesList.append(dirname)
+        
+        if args.verbose:
+            print(gvkiDirectoriesList)
+        if (len(gvkiDirectoriesList) == 0):
+            print(colors.red() + "\nNo gvki folders generated. Did you recompile with the gvki folder or did you run using the gvki preload library?\n" + colors.end())
+        
+        # .............................................................
+        # run preprocessor
+        if (args.preprocess):
+            for gvkiDirName in gvkiDirectoriesList:
+                kernel_preprocess.main(['--dir', scriptWorkingDir + os.sep + gvkiDirName, '--preprocessor', args.preprocessor])
             
     # ..........................................................................
     # print final status
