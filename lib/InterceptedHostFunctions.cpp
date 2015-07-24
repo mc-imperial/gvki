@@ -280,6 +280,20 @@ DEFN(clCreateProgramWithSource)
     return program;
 }
 
+cl_program
+DEFN(clCreateProgramWithBinary)
+        (cl_context context,
+        cl_uint num_devices,
+        const cl_device_id *device_list,
+        const size_t *lengths,
+        const unsigned char **binaries,
+        cl_int *binary_status,
+        cl_int *errcode_ret)
+{
+    printf("clCreateProgramWithBinary not supported by GVKI.\n");
+    exit(94);
+}
+
 cl_int
 DEFN(clBuildProgram)
     (cl_program           program,
