@@ -8,6 +8,7 @@ import argparse
 
 import kernel_preprocess
 import colors
+import gvki_errors
 
 def printUsage():
     print('Please run ' + sys.argv[0] + ' -h for help')
@@ -149,16 +150,16 @@ def main(argv=None):
     # ........................................................
     # run program
     code = subprocess.call(commandToRun, shell=True)
-    if code == 95: # gvki signals unsupported 2.0 functions
+    if code == gvki_errors.UNSUPPORTED_SVMP_ARG: # gvki signals unsupported 2.0 functions
         print(colors.red() + 'GVKI has detected an unsupported OpenCL 2.0 function call.' + colors.end())
         print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.\n' + colors.end())
         numberGvkiErrors += 1
-        gvkiErrorsLog.write('Error 95 (SVMPointer Error) in ' + ' '.join(commandToRun) + '\n\n')
-    elif code == 94: # gvki signals clCreateProgramFromBinary unsupported call
+        gvkiErrorsLog.write('Error SVMPointer unsupported in ' + ' '.join(commandToRun) + '\n\n')
+    elif code == gvki_errors.UNSUPPORTED_PROGRAM_FROM_BINARY: # gvki signals clCreateProgramFromBinary unsupported call
         print(colors.red() + 'GVKI has detected an unsupported clCreateProgramFromBinary call.' + colors.end())
         print(colors.red() + 'Files logged from command ' + ' '.join(commandToRun) + ' are not reliable.\n' + colors.end())
         numberGvkiErrors += 1
-        gvkiErrorsLog.write('Error 94 (programFromBinary Error) in ' + ' '.join(commandToRun) + '\n\n')
+        gvkiErrorsLog.write('Error clCreateProgramWithBinary unsupported in ' + ' '.join(commandToRun) + '\n\n')
     else:
         
         # ...........................................................

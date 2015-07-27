@@ -3,6 +3,7 @@
 #include "gvki/UnderlyingCaller.h"
 #include "gvki/Logger.h"
 #include "gvki/Debug.h"
+#include "gvki/UnsupportedCallsErrors.h"
 #include <cassert>
 #include <cstring>
 
@@ -290,8 +291,8 @@ DEFN(clCreateProgramWithBinary)
         cl_int *binary_status,
         cl_int *errcode_ret)
 {
-    printf("clCreateProgramWithBinary not supported by GVKI.\n");
-    exit(94);
+    ERROR_MSG("clCreateProgramWithBinary not supported by GVKI.\n");
+    exit(UNSUPPORTED_PROGRAM_FROM_BINARY);
 }
 
 cl_int
@@ -540,8 +541,8 @@ DEFN(clSetKernelArgSVMPointer)
       const void* arg_value
     )
 {
-    printf("OpenCL 2.0 SVM Pointer as argument not supported by GVKI.\n");
-    exit(95);
+    ERROR_MSG("OpenCL 2.0 SVM Pointer as argument not supported by GVKI.\n");
+    exit(UNSUPPORTED_SVMP_ARG);
 }
 
 
