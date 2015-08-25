@@ -3,7 +3,7 @@
 #include "gvki/UnderlyingCaller.h"
 #include "gvki/Logger.h"
 #include "gvki/Debug.h"
-#include "gvki/UnsupportedCallsErrors.h"
+#include "gvki/UnsupportedCallErrors.h"
 #include <cassert>
 #include <cstring>
 
