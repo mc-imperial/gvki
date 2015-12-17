@@ -211,6 +211,47 @@ Logger::~Logger()
     delete output;
 }
 
+static std::string getEndianness(cl_kernel k) {
+
+  // Getting the device to query for endianness
+
+  cl_program program;
+  // FIXME Is this the correct way to call a OpenCL function?
+  cl_int result = clGetKernelInfo(k, CL_KERNEL_PROGRAM, sizeof(cl_program),
+    &program, NULL);
+  if (result != CL_SUCCESS) {
+    ERROR_MSG("Error in querying for endianness: error getting kernel program.");
+    return "unknown";
+  }
+
+  cl_uint num_devices;
+  result = clGetProgramInfo(program, CL_PROGRAM_NUM_DEVICES, sizeof(cl_uint),
+    &num_devices, NULL);
+  if (result != CL_SUCCESS) {
+    ERROR_MSG("Error in querying for endianness: error getting number of devices.");
+    return "unknown";
+  }
+
+  cl_device_id *devices = (cl_device_id *)calloc(num_devices, sizeof(cl_device_id));
+  result = clGetProgramInfo(program, CL_PROGRAM_DEVICES, num_devices * sizeof(cl_device_id),
+    devices, NULL);
+  if (result != CL_SUCCESS) {
+    ERROR_MSG("Error in querying for endianness: error getting devices.");
+    return "unknown";
+  }
+
+  assert(*devices != NULL && "No devices returned from clGetProgramInfo call!");
+
+  cl_bool little_endian;
+  result = clGetDeviceInfo(*devices, CL_DEVICE_ENDIAN_LITTLE, sizeof(cl_bool),
+    &little_endian, NULL);
+  if (result != CL_SUCCESS) {
+    ERROR_MSG("Error in querying for endianness: error during clGetDeviceInfo query.");
+    return "unknown";
+  }
+  return little_endian ? "little" : "big";
+}
+
 void Logger::dump(cl_kernel k)
 {
     // Output JSON format defined by
@@ -233,39 +274,7 @@ void Logger::dump(cl_kernel k)
 
     std::string kernelSourceFile = dumpKernelSource(ki);
 
-    // Getting the device to query for endianness
-
-    cl_program program;
-	// FIXME Is this the correct way to call a OpenCL function?
-    cl_int result = clGetKernelInfo(k, CL_KERNEL_PROGRAM, sizeof(cl_program),
-	  	&program, NULL);
-	if (result != CL_SUCCESS)
-		ERROR_MSG("Error in querying for endianness: error getting kernel program.");
-
-	cl_uint num_devices;
-	result = clGetProgramInfo(program, CL_PROGRAM_NUM_DEVICES,	sizeof(cl_uint),
-		&num_devices, NULL);
-	if (result != CL_SUCCESS)
-		ERROR_MSG("Error in querying for endianness: error getting number of devices.");
-
-	cl_device_id *devices = (cl_device_id *) calloc (num_devices, sizeof(cl_device_id));
-    result = clGetProgramInfo(program, CL_PROGRAM_DEVICES, num_devices * sizeof(cl_device_id),
-	  	devices, NULL);
-	if (result != CL_SUCCESS)
-		ERROR_MSG("Error in querying for endianness: error getting devices.");
-
-	assert(*devices != NULL && "No devices returned from clGetProgramInfo call!");
-
-    cl_bool little_endian;
-    result = clGetDeviceInfo(*devices, CL_DEVICE_ENDIAN_LITTLE,	sizeof(cl_bool),
-	  	&little_endian, NULL);
-	if (result != CL_SUCCESS)
-		ERROR_MSG("Error in querying for endianness: error during clGetDeviceInfo query.");
-
-    *output << "\"endianness\": \"";
-	*output << ((char*) (little_endian ? "little": "big"));
-	*output << "\"," << endl;
-
+    *output << "\"endianness\": \"" << getEndianness(k) << "\"," << endl;
 
     *output << "\"kernel_file\": \"" << kernelSourceFile << "\"," << endl;
 
