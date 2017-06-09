@@ -256,29 +256,6 @@ def emit_setup_regular_kernel_args(kernel_info, outfile):
             sys.stderr.write("Only array and scalar arguments are supported")
             exit(1)
 
-def emit_setup_emi_kernel_arg(kernel_info, outfile):
-    outfile.write("\n\n")
-    outfile.write("  cl_mem __emi_device;\n")
-    outfile.write("  cl_int * __emi_host;\n");
-    outfile.write("  if (emi_enabled) {\n")
-    EMI_LENGTH = 256
-    outfile.write("    __emi_device = clCreateBuffer(context, CL_MEM_READ_WRITE, " + str(EMI_LENGTH) + "*sizeof(cl_int), NULL, &err);\n")
-    outfile.write("    if (cl_error_check(err, \"Error creating buffer for emi data\"))\n")
-    outfile.write("      exit(1);\n")
-    outfile.write("    __emi_host = (cl_int*)malloc(sizeof(cl_int)*" + str(EMI_LENGTH) + ");\n")
-    outfile.write("    if(!__emi_host) {\n")
-    outfile.write("      printf(\"Error allocating memory on host for emi data\");\n")
-    outfile.write("      exit(1);\n")
-    outfile.write("    }\n")
-    outfile.write("    for(int count = 0; count < " + str(EMI_LENGTH) + "; count++) {\n")
-    outfile.write("      __emi_host[count] = count;\n")
-    outfile.write("    }\n")
-    outfile.write("    err = clEnqueueWriteBuffer(command_queue, __emi_device, CL_TRUE, 0, " + str(EMI_LENGTH) + "*sizeof(cl_int), __emi_host, 0, NULL, NULL);\n")
-    outfile.write("    if (cl_error_check(err, \"Error copying emi data to device\"))\n")
-    outfile.write("      exit(1);\n")
-    emit_set_kernel_arg("    ", len(kernel_info["kernel_arguments"]), "cl_mem", "__emi_device", outfile)
-    outfile.write("  }\n")
-
 def emit_launch_kernel(kernel_info, outfile):
     outfile.write("\n\n  // Launching the kernel\n")
     assert(len(kernel_info["global_size"]) == len(kernel_info["local_size"]))
@@ -324,9 +301,6 @@ def emit_cleanup(kernel_info, outfile):
         arg = kernel_info["kernel_arguments"][i]
         if arg["type"] == "array":
             outfile.write("  free(array_data_" + str(i) + ");\n")
-    outfile.write("  if (emi_enabled) {\n")
-    outfile.write("    free(__emi_host);\n")
-    outfile.write("  }\n")
     outfile.write("\n\n  // Freeing allocated memory\n")
     outfile.write("  free(devices);\n")
     outfile.write("  free(platforms);\n")
@@ -344,14 +318,8 @@ def emit_host_application(kernel_info, outfile, platformID, deviceID):
     emit_show_array(outfile)
 
     outfile.write("int main(int argc, char * * argv) {\n")
-    outfile.write("  if(argc != 3) {\n")
-    outfile.write("    printf(\"Usage: %s <kernel file> <0 or 1 to disable/enable emi>\\n\", argv[0]);\n")
-    outfile.write("    exit(1);\n")
-    outfile.write("  }\n")
-    outfile.write("\n")
-    outfile.write("  int emi_enabled = atoi(argv[2]);\n");
-    outfile.write("  if(!(emi_enabled == 0 || emi_enabled == 1)) {\n");
-    outfile.write("    printf(\"Bad argument %s supplied for emi enabledness\\n\", argv[2]);\n")
+    outfile.write("  if(argc != 2) {\n")
+    outfile.write("    printf(\"Usage: %s <kernel file>\\n\", argv[0]);\n")
     outfile.write("    exit(1);\n")
     outfile.write("  }\n")
     outfile.write("\n")
@@ -368,7 +336,6 @@ def emit_host_application(kernel_info, outfile, platformID, deviceID):
     emit_build_program(outfile)
     emit_create_kernel(kernel_info, outfile)
     emit_setup_regular_kernel_args(kernel_info, outfile)
-    emit_setup_emi_kernel_arg(kernel_info, outfile)
     emit_launch_kernel(kernel_info, outfile)
     emit_copy_back_results(kernel_info, outfile)
     emit_write_results(kernel_info, outfile)
