@@ -16,6 +16,89 @@ def get_scalar_host_typename(size_in_bytes):
         return "cl_uchar"
     assert(False)
 
+def emit_opencl_target(outfile):
+    outfile.write('''
+//---- opencl_target (see https://github.com/hevrard/opencl_target) ---------
+#define OPENCL_TARGET_CL_CALL(func, ...) do {                           \\
+        cl_int __cl_err = 0;                                            \\
+        __cl_err = func(__VA_ARGS__);                                   \\
+        if (__cl_err != CL_SUCCESS) {                                   \\
+            fprintf(stderr, "%s:%d OPENCL_TARGET PANIC: OpenCL primitive failed: %s\\n", __FILE__, __LINE__, #func ); \\
+            abort();                                                    \\
+        }                                                               \\
+    } while (0)
+
+void opencl_target_init(cl_platform_id *platform_id, cl_device_id *device_id);
+
+inline void opencl_target_init(cl_platform_id *platform_id, cl_device_id *device_id)
+{
+    cl_platform_id *platforms = NULL;
+    cl_device_id *devices = NULL;
+    char *device_version = NULL;
+    *device_id = NULL;
+
+    char *envname;
+    envname = getenv("OPENCL_TARGET_DEVICE");
+    if (envname == NULL) {
+        envname = (char *)"";   // cast to please c++ compiler
+    }
+
+    cl_uint num_platforms = 0;
+    OPENCL_TARGET_CL_CALL (clGetPlatformIDs, 0, NULL, &num_platforms);
+    if (num_platforms <= 0) {
+        goto opencl_target_exit;
+    }
+
+    platforms = (cl_platform_id *) malloc(num_platforms * sizeof(cl_platform_id));
+    OPENCL_TARGET_CL_CALL (clGetPlatformIDs, num_platforms, platforms, NULL);
+
+    for (cl_uint i = 0; i < num_platforms; i++) {
+        *platform_id = platforms[i];
+
+        cl_uint num_devices = 0;
+        OPENCL_TARGET_CL_CALL (clGetDeviceIDs, *platform_id, CL_DEVICE_TYPE_ALL, 0, NULL, &num_devices);
+        if (num_devices <= 0) {
+            continue;
+        }
+
+        devices = (cl_device_id *) realloc(devices, num_devices * sizeof(cl_device_id));
+        OPENCL_TARGET_CL_CALL (clGetDeviceIDs, *platform_id, CL_DEVICE_TYPE_ALL, num_devices, devices, NULL);
+
+        for (cl_uint j = 0; j < num_devices; j++) {
+            *device_id = devices[j];
+            size_t device_version_size = 0;
+            OPENCL_TARGET_CL_CALL (clGetDeviceInfo, *device_id, CL_DEVICE_VERSION, 0, NULL, &device_version_size);
+            if (device_version_size <= 0) {
+                continue;
+            }
+            device_version = (char *) realloc(device_version, device_version_size);
+            if (device_version == NULL) {
+                goto opencl_target_exit;
+            }
+            OPENCL_TARGET_CL_CALL (clGetDeviceInfo, *device_id, CL_DEVICE_VERSION, device_version_size, device_version, NULL);
+            int name_match = ( strstr(device_version, envname) != NULL );
+            free(device_version);
+            device_version = NULL;
+            if (name_match) {
+                goto opencl_target_exit;
+            }
+        }
+    }
+
+    // reaching here means no device was found;
+    *device_id = NULL;
+
+opencl_target_exit:
+
+    if (platforms      != NULL) { free(platforms); }
+    if (devices        != NULL) { free(devices); }
+    if (device_version != NULL) { free(device_version); }
+}
+
+#undef OPENCL_TARGET_CL_CALL
+//-----------------------------------------------------------------------------
+''')
+
 def emit_set_kernel_arg(__indent, __i, __type, __name, outfile):
     outfile.write(__indent + "err = clSetKernelArg(kernel, kernel_arg++, sizeof(" + __type + "), &" + __name + ");\n")
     outfile.write(__indent + "if(cl_error_check(err, \"Error setting kernel argument " + str(__i) + "\"))\n")
@@ -82,34 +165,16 @@ def emit_show_array(outfile):
     outfile.write("  }\n")
     outfile.write("}\n\n");
 
-def emit_get_platform(outfile):
-    outfile.write("\n\n  // Getting the platform\n")
-    outfile.write("  cl_platform_id * platforms = (cl_platform_id*)malloc(sizeof(cl_platform_id)*(platform_index + 1));\n")
-    outfile.write("  cl_uint platform_count;\n")
-    outfile.write("  err = clGetPlatformIDs(platform_index + 1, platforms, &platform_count);\n")
-    outfile.write("  if (cl_error_check(err, \"Error getting platform ids\"))\n")
-    outfile.write("    exit(1);\n")
-    outfile.write("  if (platform_count <= platform_index) {\n")
-    outfile.write("    printf(\"No platform for id %d\\n\", platform_index);\n")
-    outfile.write("    exit(1);\n")
-    outfile.write("  }\n")
+def emit_opencl_target_init(outfile):
+    outfile.write('''
 
-def emit_get_device(outfile):
-    outfile.write("\n\n  // Getting the device\n")
-    outfile.write("  cl_device_id * devices = (cl_device_id*)malloc(sizeof(cl_device_id)*(device_index + 1));\n")
-    outfile.write("  cl_uint device_count;\n")
-    outfile.write("  err = clGetDeviceIDs(platforms[platform_index], CL_DEVICE_TYPE_ALL, device_index + 1, devices, &device_count);\n")
-    outfile.write("  if (cl_error_check(err, \"Error getting device ids\"))\n")
-    outfile.write("    exit(1);\n")
-    outfile.write("  if (device_count <= device_index) {\n")
-    outfile.write("    printf(\"No device for id %d\\n\", device_index);\n")
-    outfile.write("    exit(1);\n")
-    outfile.write("  }\n")
+    opencl_target_init(&platform_id, &device_id);
+''')
 
 def emit_check_device_supports_configuration(kernel_info, outfile):
     outfile.write("\n\n  // Checking device supports given number of dimensions\n")
     outfile.write("  cl_int max_dimensions;\n")
-    outfile.write("  err = clGetDeviceInfo(devices[device_index], CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_int), &max_dimensions, NULL);\n")
+    outfile.write("  err = clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, sizeof(cl_int), &max_dimensions, NULL);\n")
     outfile.write("  if (cl_error_check(err, \"Error querying CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS\"))\n");
     outfile.write("    exit(1);\n")
     outfile.write("  if(max_dimensions < " + str(len(kernel_info["global_size"])) + ") {\n")
@@ -119,7 +184,7 @@ def emit_check_device_supports_configuration(kernel_info, outfile):
 
     outfile.write("\n\n  // Checking that number of work items in each dimension is OK\n")
     outfile.write("  size_t * max_work_items = (size_t*)malloc(sizeof(size_t)*max_dimensions);")
-    outfile.write("  err = clGetDeviceInfo(devices[device_index], CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t)*max_dimensions, max_work_items, NULL);\n")
+    outfile.write("  err = clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof(size_t)*max_dimensions, max_work_items, NULL);\n")
     outfile.write("  if (cl_error_check(err, \"Error querying CL_DEVICE_MAX_WORK_ITEM_SIZES\"))\n");
     outfile.write("    exit(1);\n")
     for i in range(0, len(kernel_info["local_size"])):
@@ -131,7 +196,7 @@ def emit_check_device_supports_configuration(kernel_info, outfile):
 
     outfile.write("\n\n  // Checking that work group size is not too large\n\n")
     outfile.write("  size_t max_work_group_size;\n")
-    outfile.write("  err = clGetDeviceInfo(devices[device_index], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);\n")
+    outfile.write("  err = clGetDeviceInfo(device_id, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);\n")
     outfile.write("  if (cl_error_check(err, \"Error querying CL_DEVICE_MAX_WORK_GROUP_SIZE\"))\n");
     outfile.write("    exit(1);\n")
 
@@ -146,14 +211,14 @@ def emit_check_device_supports_configuration(kernel_info, outfile):
 
 def emit_create_context(outfile):
     outfile.write("\n\n  // Creating a context\n")
-    outfile.write("  cl_context_properties properties[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platforms[platform_index], 0 };\n")
-    outfile.write("  cl_context context = clCreateContext(properties, 1, &devices[device_index], error_callback, NULL, &err);\n")
+    outfile.write("  cl_context_properties properties[3] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id, 0 };\n")
+    outfile.write("  cl_context context = clCreateContext(properties, 1, &device_id, error_callback, NULL, &err);\n")
     outfile.write("  if (cl_error_check(err, \"Error creating context\"))\n")
     outfile.write("    exit(1);\n")
 
 def emit_create_command_queue(outfile):
     outfile.write("\n\n  // Creating a command queue\n")
-    outfile.write("  cl_command_queue command_queue = clCreateCommandQueue(context, devices[device_index], 0, &err);\n")
+    outfile.write("  cl_command_queue command_queue = clCreateCommandQueue(context, device_id, 0, &err);\n")
     outfile.write("  if (cl_error_check(err, \"Error creating command queue\"))\n")
     outfile.write("    exit(1);\n")
 
@@ -189,7 +254,7 @@ def emit_build_program(outfile):
     outfile.write("  err = clBuildProgram(program, 0, NULL, \"-I . -D__NATIVE_EXECUTION -cl-kernel-arg-info\", NULL, NULL);\n")
     outfile.write("  if (cl_error_check(err, \"Error building program\")) {\n")
     outfile.write("    size_t err_size;\n")
-    outfile.write("    err = clGetProgramBuildInfo(program, devices[device_index], CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);\n")
+    outfile.write("    err = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, 0, NULL, &err_size);\n")
     outfile.write("    if (cl_error_check(err, \"Error getting build info\"))\n")
     outfile.write("      return 1;\n")
     outfile.write("    char *err_code = (char*)malloc(err_size);\n")
@@ -197,7 +262,7 @@ def emit_build_program(outfile):
     outfile.write("      printf(\"Failed to malloc %ld bytes\\n\", err_size);\n")
     outfile.write("      return 1;\n")
     outfile.write("    }\n")
-    outfile.write("    err = clGetProgramBuildInfo(program, devices[device_index], CL_PROGRAM_BUILD_LOG, err_size, err_code, &err_size);\n")
+    outfile.write("    err = clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, err_size, err_code, &err_size);\n")
     outfile.write("    if (!cl_error_check(err, \"Error getting build info\"))\n")
     outfile.write("      printf(\"%s\", err_code);\n")
     outfile.write("    free(err_code);\n")
@@ -302,11 +367,9 @@ def emit_cleanup(kernel_info, outfile):
         if arg["type"] == "array":
             outfile.write("  free(array_data_" + str(i) + ");\n")
     outfile.write("\n\n  // Freeing allocated memory\n")
-    outfile.write("  free(devices);\n")
-    outfile.write("  free(platforms);\n")
     outfile.write("  free(source_text);\n")
 
-def emit_host_application(kernel_info, outfile, platformID, deviceID):
+def emit_host_application(kernel_info, outfile):
     if kernel_info["language"] != "OpenCL":
         sys.stderr.write("Only OpenCL kernels are supported")
         exit(1)
@@ -314,17 +377,19 @@ def emit_host_application(kernel_info, outfile, platformID, deviceID):
     assert len(kernel_info["global_size"]) == len(kernel_info["local_size"])
 
     emit_includes(outfile)
+    emit_opencl_target(outfile)
     emit_error_handlers(outfile)
     emit_show_array(outfile)
 
     outfile.write("int main(int argc, char * * argv) {\n")
     outfile.write("  char *kernel_filename=\"" + kernel_info['kernel_file'] + "\";\n")
     outfile.write("  cl_int err;\n")
-    outfile.write("  size_t platform_index = %d;\n" % platformID)
-    outfile.write("  size_t device_index = %d;\n" % deviceID)
+    outfile.write("  cl_platform_id platform_id = NULL;\n")
+    outfile.write("  cl_device_id device_id = NULL;\n")
 
-    emit_get_platform(outfile)
-    emit_get_device(outfile)
+    emit_opencl_target_init(outfile)
+    # emit_get_platform(outfile)
+    # emit_get_device(outfile)
     emit_check_device_supports_configuration(kernel_info, outfile)
     emit_create_context(outfile)
     emit_create_command_queue(outfile)
@@ -365,4 +430,4 @@ if __name__ == "__main__":
     for i, k in enumerate(kernels):
         outfile = "minihost_" + str(i) + ".c"
         with open(outfile, "w") as f:
-            emit_host_application(k, f, 0, 0)
+            emit_host_application(k, f)
