@@ -284,7 +284,6 @@ def emit_setup_regular_kernel_args(kernel_info, outfile):
         if arg["type"] == "array":
             array_name = "array_arg_" + str(i)
             array_type = "cl_mem"
-            # Hugues: in json, arg["flags"] is a list, but here the code expect a single string
             outfile.write("  " + array_type + " " + array_name + " = clCreateBuffer(context, " + " ".join(arg["flags"]) + ", " + str(arg["size"]) + ", NULL, &err);\n")
             outfile.write("  if (cl_error_check(err, \"Error creating buffer for kernel argument " + str(i) + "\"))\n")
             outfile.write("    exit(1);\n")
@@ -388,8 +387,6 @@ def emit_host_application(kernel_info, outfile):
     outfile.write("  cl_device_id device_id = NULL;\n")
 
     emit_opencl_target_init(outfile)
-    # emit_get_platform(outfile)
-    # emit_get_device(outfile)
     emit_check_device_supports_configuration(kernel_info, outfile)
     emit_create_context(outfile)
     emit_create_command_queue(outfile)
